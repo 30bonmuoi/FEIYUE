@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="vi" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Biểu Đồ Doanh Thu X-TEAM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    #animated-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    }
+    
+    .content-wrapper {
+      position: relative;
+      z-index: 1;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="h-full overflow-auto">
+  <div id="animated-background"></div>
+  <div id="details-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+   <div class="bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90%] overflow-y-auto">
+    <div class="sticky top-0 bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center">
+     <h3 id="modal-title" class="text-xl font-bold text-green-400"></h3><button id="close-modal" class="text-gray-400 hover:text-white text-2xl">×</button>
+    </div>
+    <div id="modal-content" class="p-6"></div>
+   </div>
+  </div>
+  <div class="content-wrapper w-full min-h-full">
+   <div class="max-w-7xl mx-auto p-6">
+    <h1 id="page-title" class="text-4xl font-bold text-green-400 mb-8 text-center">BIỂU ĐỒ DOANH THU X-TEAM</h1>
+    <div class="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-green-500">
+     <div class="flex justify-between items-center mb-4">
+      <h2 id="input-section-title" class="text-2xl font-semibold text-green-400">Nhập Dữ Liệu</h2><button id="toggle-input-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200 flex items-center gap-2"> <span id="toggle-icon">▼</span> <span id="toggle-text">Thu gọn</span> </button>
+     </div>
+     <div id="input-content">
+      <div class="mb-4"><label for="selected-date" class="block text-sm font-medium text-gray-300 mb-2">Chọn Ngày</label> <input type="date" id="selected-date" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-white">
+      </div>
+      <div class="mb-4"><label for="data-input" class="block text-sm font-medium text-gray-300 mb-2">Nhập Dữ Liệu (mỗi hàng một giao dịch)</label> <textarea id="data-input" rows="8" placeholder="Ví dụ:
+21:15 3200 D 3003
+22:15 20570 3003" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent font-mono text-white placeholder-gray-400"></textarea>
+      </div>
+      <div class="grid grid-cols-2 gap-4"><button id="submit-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"> Lưu Dữ Liệu </button> <button id="delete-all-btn" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition duration-200"> 🗑️ Xóa Tất Cả </button>
+      </div>
+      <div id="submit-message" class="mt-4 text-center hidden"></div>
+     </div>
+    </div>
+    <div id="summary-section" class="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg shadow-2xl p-6 mb-6 border-4 border-yellow-400 hidden">
+     <h2 class="text-3xl font-bold text-white mb-4 text-center">📊 TỔNG KẾT TOÀN BỘ</h2>
+     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+       <p class="text-sm text-white mb-2">Tổng Nhân Viên</p>
+       <p id="total-employees" class="text-3xl font-bold text-white">0</p>
+      </div>
+      <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+       <p class="text-sm text-white mb-2">Tổng Giao Dịch</p>
+       <p id="total-transactions" class="text-3xl font-bold text-white">0</p>
+      </div>
+      <div class="bg-white bg-opacity-20 rounded-lg p-4 text-center">
+       <p class="text-sm text-white mb-2">Tổng Doanh Thu</p>
+       <p id="total-revenue" class="text-3xl font-bold text-white">0đ</p>
+      </div>
+     </div>
+    </div>
+    <div id="team1-section" class="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-blue-500 hidden">
+     <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-semibold text-blue-400">👥 TỔ 1</h2>
+      <div class="bg-blue-900 px-4 py-2 rounded-lg">
+       <div class="grid grid-cols-3 gap-6 text-center">
+        <div>
+         <p class="text-xs text-blue-300">Số người</p>
+         <p id="team1-count" class="text-lg font-bold text-white">0</p>
+        </div>
+        <div>
+         <p class="text-xs text-blue-300">Giao dịch</p>
+         <p id="team1-transactions" class="text-lg font-bold text-white">0</p>
+        </div>
+        <div>
+         <p class="text-xs text-blue-300">TB/người</p>
+         <p id="team1-average" class="text-lg font-bold text-white">0đ</p>
+        </div>
+       </div>
+      </div>
+     </div>
+     <div id="team1-list" class="space-y-2">
+      <p class="text-gray-400 text-center py-8">Chưa có dữ liệu.</p>
+     </div>
+     <div class="mt-4 bg-blue-900 p-4 rounded-lg">
+      <div class="flex justify-between items-center"><span class="text-lg font-semibold text-blue-300">TỔNG TỔ 1:</span> <span id="team1-total" class="text-2xl font-bold text-blue-300">0đ</span>
+      </div>
+     </div>
+    </div>
+    <div id="team2-section" class="bg-gray-800 rounded-lg shadow-lg p-6 mb-6 border border-purple-500 hidden">
+     <div class="flex justify-between items-center mb-4">
+      <h2 class="text-2xl font-semibold text-purple-400">👥 TỔ 2</h2>
+      <div class="bg-purple-900 px-4 py-2 rounded-lg">
+       <div class="grid grid-cols-3 gap-6 text-center">
+        <div>
+         <p class="text-xs text-purple-300">Số người</p>
+         <p id="team2-count" class="text-lg font-bold text-white">0</p>
+        </div>
+        <div>
+         <p class="text-xs text-purple-300">Giao dịch</p>
+         <p id="team2-transactions" class="text-lg font-bold text-white">0</p>
+        </div>
+        <div>
+         <p class="text-xs text-purple-300">TB/người</p>
+         <p id="team2-average" class="text-lg font-bold text-white">0đ</p>
+        </div>
+       </div>
+      </div>
+     </div>
+     <div id="team2-list" class="space-y-2">
+      <p class="text-gray-400 text-center py-8">Chưa có dữ liệu.</p>
+     </div>
+     <div class="mt-4 bg-purple-900 p-4 rounded-lg">
+      <div class="flex justify-between items-center"><span class="text-lg font-semibold text-purple-300">TỔNG TỔ 2:</span> <span id="team2-total" class="text-2xl font-bold text-purple-300">0đ</span>
+      </div>
+     </div>
+    </div>
+    <div id="other-section" class="bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-500 hidden">
+     <h2 class="text-2xl font-semibold text-gray-400 mb-4">👥 KHÁC</h2>
+     <div id="other-list" class="space-y-2">
+      <p class="text-gray-400 text-center py-8">Chưa có dữ liệu.</p>
+     </div>
+     <div class="mt-4 bg-gray-900 p-4 rounded-lg">
+      <div class="flex justify-between items-center"><span class="text-lg font-semibold text-gray-300">TỔNG KHÁC:</span> <span id="other-total" class="text-2xl font-bold text-gray-300">0đ</span>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      page_title: "BIỂU ĐỒ DOANH THU X-TEAM",
+      input_section_title: "Nhập Dữ Liệu",
+      primary_color: "#10b981",
+      surface_color: "#1f2937",
+      text_color: "#f9fafb"
+    };
+
+    let allTransactions = [];
+
+    const dataHandler = {
+      onDataChanged(data) {
+        allTransactions = data;
+        updateEmployeeList();
+      }
+    };
+
+    async function onConfigChange(config) {
+      const pageTitle = document.getElementById('page-title');
+      const inputSectionTitle = document.getElementById('input-section-title');
+      
+      if (pageTitle) {
+        pageTitle.textContent = config.page_title || defaultConfig.page_title;
+      }
+      
+      if (inputSectionTitle) {
+        inputSectionTitle.textContent = config.input_section_title || defaultConfig.input_section_title;
+      }
+    }
+
+    function mapToCapabilities(config) {
+      return {
+        recolorables: [
+          {
+            get: () => config.primary_color || defaultConfig.primary_color,
+            set: (value) => {
+              config.primary_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ primary_color: value });
+            }
+          },
+          {
+            get: () => config.surface_color || defaultConfig.surface_color,
+            set: (value) => {
+              config.surface_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ surface_color: value });
+            }
+          },
+          {
+            get: () => config.text_color || defaultConfig.text_color,
+            set: (value) => {
+              config.text_color = value;
+              if (window.elementSdk) window.elementSdk.setConfig({ text_color: value });
+            }
+          }
+        ],
+        borderables: [],
+        fontEditable: undefined,
+        fontSizeable: undefined
+      };
+    }
+
+    function mapToEditPanelValues(config) {
+      return new Map([
+        ["page_title", config.page_title || defaultConfig.page_title],
+        ["input_section_title", config.input_section_title || defaultConfig.input_section_title]
+      ]);
+    }
+
+    async function initApp() {
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities,
+          mapToEditPanelValues
+        });
+      }
+
+      if (window.dataSdk) {
+        const initResult = await window.dataSdk.init(dataHandler);
+        if (!initResult.isOk) {
+          console.error("Failed to initialize data SDK");
+        }
+      }
+
+      const todayInput = document.getElementById('selected-date');
+      const today = new Date();
+      todayInput.value = today.toISOString().split('T')[0];
+
+      document.getElementById('submit-btn').addEventListener('click', handleSubmit);
+      document.getElementById('close-modal').addEventListener('click', closeModal);
+      document.getElementById('details-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'details-modal') closeModal();
+      });
+      document.getElementById('toggle-input-btn').addEventListener('click', toggleInputSection);
+      document.getElementById('delete-all-btn').addEventListener('click', handleDeleteAll);
+    }
+
+    function parseInput(text) {
+      const lines = text.trim().split('\n').filter(line => line.trim());
+      const transactions = [];
+      
+      lines.forEach(line => {
+        const parts = line.trim().split(/\s+/);
+        
+        if (parts.length === 4) {
+          const [time, amount, orderType, employeeCode] = parts;
+          transactions.push({
+            time,
+            amount: parseAmount(amount),
+            orderType: orderType.toUpperCase(),
+            employeeCode,
+            type: 'deposit'
+          });
+        } else if (parts.length === 3) {
+          const [time, amount, employeeCode] = parts;
+          transactions.push({
+            time,
+            amount: parseAmount(amount),
+            employeeCode,
+            type: 'withdrawal'
+          });
+        }
+      });
+      
+      return transactions;
+    }
+
+    function parseAmount(amountStr) {
+      if (amountStr.includes(',')) {
+        const parts = amountStr.split(',');
+        const thousands = parseInt(parts[0]) * 1000;
+        const units = parseInt(parts[1].padEnd(3, '0'));
+        return thousands + units;
+      }
+      return parseInt(amountStr) * 1000;
+    }
+
+    async function handleSubmit(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submit-btn');
+      const dataInput = document.getElementById('data-input');
+      const selectedDate = document.getElementById('selected-date').value;
+      
+      if (!selectedDate) {
+        showMessage('Vui lòng chọn ngày!', 'error');
+        return;
+      }
+      
+      if (!dataInput.value.trim()) {
+        showMessage('Vui lòng nhập dữ liệu!', 'error');
+        return;
+      }
+
+      if (allTransactions.length >= 999) {
+        showMessage('Đã đạt giới hạn 999 giao dịch. Vui lòng xóa bớt dữ liệu cũ.', 'error');
+        return;
+      }
+      
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Đang lưu...';
+      
+      const transactions = parseInput(dataInput.value);
+      
+      for (const transaction of transactions) {
+        if (allTransactions.length >= 999) {
+          showMessage('Đã đạt giới hạn 999 giao dịch.', 'error');
+          break;
+        }
+
+        const result = await window.dataSdk.create({
+          employee_code: transaction.employeeCode,
+          date: selectedDate,
+          time: transaction.time,
+          amount: transaction.amount,
+          transaction_type: transaction.type,
+          order_type: transaction.orderType || ''
+        });
+        
+        if (!result.isOk) {
+          showMessage('Có lỗi xảy ra khi lưu dữ liệu!', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Lưu Dữ Liệu';
+          return;
+        }
+      }
+      
+      dataInput.value = '';
+      showMessage('Đã lưu ' + transactions.length + ' giao dịch thành công!', 'success');
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Lưu Dữ Liệu';
+    }
+
+    function showMessage(text, type) {
+      const messageDiv = document.getElementById('submit-message');
+      messageDiv.textContent = text;
+      messageDiv.className = 'mt-4 text-center p-3 rounded-lg ' + (type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800');
+      messageDiv.classList.remove('hidden');
+      
+      setTimeout(() => {
+        messageDiv.classList.add('hidden');
+      }, 3000);
+    }
+
+    function handleDeleteAll() {
+      if (allTransactions.length === 0) {
+        showMessage('Không có dữ liệu để xóa!', 'error');
+        return;
+      }
+      
+      const modalHtml = '<div class="space-y-4"><div class="bg-red-900 p-4 rounded-lg border-2 border-red-500"><p class="text-white text-lg font-semibold text-center">⚠️ CẢNH BÁO ⚠️</p><p class="text-white text-center mt-2">Bạn có chắc chắn muốn xóa toàn bộ ' + allTransactions.length + ' giao dịch?</p><p class="text-red-300 text-sm text-center mt-2">Hành động này không thể hoàn tác!</p></div><div class="grid grid-cols-2 gap-4"><button onclick="confirmDeleteAllData()" class="bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg">Xác Nhận Xóa</button><button onclick="closeModal()" class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg">Hủy Bỏ</button></div></div>';
+      
+      showModal('⚠️ Xóa Toàn Bộ Dữ Liệu', modalHtml);
+    }
+
+    async function confirmDeleteAllData() {
+      const modalContent = document.getElementById('modal-content');
+      modalContent.innerHTML = '<div class="text-center"><p class="text-gray-300 text-lg mb-4">Đang xóa tất cả dữ liệu...</p><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto"></div></div>';
+      
+      const deleteBtn = document.getElementById('delete-all-btn');
+      if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.textContent = 'Đang xóa...';
+      }
+      
+      let deletedCount = 0;
+      for (const transaction of allTransactions) {
+        const result = await window.dataSdk.delete(transaction);
+        if (result.isOk) {
+          deletedCount++;
+        }
+      }
+      
+      if (deleteBtn) {
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = '🗑️ Xóa Tất Cả';
+      }
+      
+      closeModal();
+      showMessage('Đã xóa thành công ' + deletedCount + ' giao dịch!', 'success');
+    }
+
+    window.confirmDeleteAllData = confirmDeleteAllData;
+
+    function toggleInputSection() {
+      const inputContent = document.getElementById('input-content');
+      const toggleIcon = document.getElementById('toggle-icon');
+      const toggleText = document.getElementById('toggle-text');
+      
+      if (inputContent.style.display === 'none') {
+        const modalHtml = '<div class="space-y-4"><div class="bg-yellow-900 p-4 rounded-lg border-2 border-yellow-500"><p class="text-white text-lg font-semibold text-center">🔒 NHẬP MẬT KHẨU</p><p class="text-yellow-300 text-sm text-center mt-2">Cần mật khẩu để mở phần nhập liệu</p></div><form id="password-form" class="space-y-4"><div><label class="block text-sm font-medium text-gray-300 mb-2">Mật khẩu</label><input type="password" id="password-input" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-2 focus:ring-yellow-500" placeholder="Nhập mật khẩu" autocomplete="off"></div><button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg">Mở Khóa</button></form></div>';
+        
+        showModal('🔒 Xác Thực Mật Khẩu', modalHtml);
+        
+        document.getElementById('password-form').addEventListener('submit', (e) => {
+          e.preventDefault();
+          const password = document.getElementById('password-input').value;
+          
+          if (password === 'AD1234') {
+            inputContent.style.display = 'block';
+            toggleIcon.textContent = '▼';
+            toggleText.textContent = 'Thu gọn';
+            closeModal();
+          } else {
+            showMessage('Sai mật khẩu!', 'error');
+            document.getElementById('password-input').value = '';
+            document.getElementById('password-input').focus();
+          }
+        });
+        
+        setTimeout(() => {
+          document.getElementById('password-input').focus();
+        }, 100);
+      } else {
+        inputContent.style.display = 'none';
+        toggleIcon.textContent = '▲';
+        toggleText.textContent = 'Mở rộng';
+      }
+    }
+
+    function getTeam(code) {
+      const team1 = ['3022', '1196', '3003', '3075', '3076', '3081'];
+      const team2 = ['3001', '3008', '3025', '3078', '3079'];
+      
+      if (team1.includes(code)) return 'Tổ 1';
+      if (team2.includes(code)) return 'Tổ 2';
+      return '-';
+    }
+
+    function updateEmployeeList() {
+      if (allTransactions.length === 0) {
+        document.getElementById('summary-section').classList.add('hidden');
+        document.getElementById('team1-section').classList.add('hidden');
+        document.getElementById('team2-section').classList.add('hidden');
+        document.getElementById('other-section').classList.add('hidden');
+        return;
+      }
+      
+      const employeeData = new Map();
+      const team1Codes = [];
+      const team2Codes = [];
+      const otherCodes = [];
+      
+      for (let i = 0; i < allTransactions.length; i++) {
+        const t = allTransactions[i];
+        const code = t.employee_code;
+        
+        if (!employeeData.has(code)) {
+          employeeData.set(code, { deposits: 0, withdrawals: 0 });
+          const team = getTeam(code);
+          if (team === 'Tổ 1') team1Codes.push(code);
+          else if (team === 'Tổ 2') team2Codes.push(code);
+          else otherCodes.push(code);
+        }
+        
+        const data = employeeData.get(code);
+        if (t.transaction_type === 'deposit') {
+          data.deposits += t.amount;
+        } else {
+          data.withdrawals += t.amount;
+        }
+      }
+      
+      team1Codes.sort();
+      team2Codes.sort();
+      otherCodes.sort();
+      
+      let team1Total = 0;
+      let team2Total = 0;
+      let otherTotal = 0;
+      let grandTotal = 0;
+      
+      if (team1Codes.length > 0) {
+        const rows = [];
+        let team1TransactionCount = 0;
+        
+        for (let i = 0; i < team1Codes.length; i++) {
+          const code = team1Codes[i];
+          const data = employeeData.get(code);
+          const profit = data.deposits - data.withdrawals;
+          team1Total += profit;
+          grandTotal += profit;
+          
+          let count = 0;
+          for (let j = 0; j < allTransactions.length; j++) {
+            if (allTransactions[j].employee_code === code) count++;
+          }
+          team1TransactionCount += count;
+          
+          rows.push('<tr class="border-b border-gray-700 hover:bg-gray-700 text-gray-200"><td class="py-4 px-6 text-center font-semibold text-lg">' + code + '</td><td class="py-4 px-6 text-right font-bold text-xl ' + (profit >= 0 ? 'text-green-400' : 'text-red-400') + '">' + formatMoney(profit) + '</td><td class="py-4 px-6 text-center"><button onclick="viewEmployee(\'' + code + '\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded mr-2 text-sm font-semibold">Xem</button><button onclick="editEmployee(\'' + code + '\')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded mr-2 text-sm font-semibold">Sửa</button><button onclick="deleteEmployee(\'' + code + '\')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-semibold">Xóa</button></td></tr>');
+        }
+        
+        document.getElementById('team1-list').innerHTML = '<div class="border-2 border-blue-500 rounded-lg overflow-hidden bg-gray-900"><div class="overflow-x-auto"><table class="w-full"><thead class="bg-blue-600"><tr><th class="py-4 px-6 text-center text-lg font-bold text-white">MÃ SỐ</th><th class="py-4 px-6 text-center text-lg font-bold text-white">DOANH THU</th><th class="py-4 px-6 text-center text-lg font-bold text-white">THAO TÁC</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div></div>';
+        
+        document.getElementById('team1-count').textContent = team1Codes.length;
+        document.getElementById('team1-transactions').textContent = team1TransactionCount;
+        document.getElementById('team1-average').textContent = formatMoney(team1Total / team1Codes.length);
+        document.getElementById('team1-total').textContent = formatMoney(team1Total);
+        document.getElementById('team1-section').classList.remove('hidden');
+      } else {
+        document.getElementById('team1-section').classList.add('hidden');
+      }
+      
+      if (team2Codes.length > 0) {
+        const rows = [];
+        let team2TransactionCount = 0;
+        
+        for (let i = 0; i < team2Codes.length; i++) {
+          const code = team2Codes[i];
+          const data = employeeData.get(code);
+          const profit = data.deposits - data.withdrawals;
+          team2Total += profit;
+          grandTotal += profit;
+          
+          let count = 0;
+          for (let j = 0; j < allTransactions.length; j++) {
+            if (allTransactions[j].employee_code === code) count++;
+          }
+          team2TransactionCount += count;
+          
+          rows.push('<tr class="border-b border-gray-700 hover:bg-gray-700 text-gray-200"><td class="py-4 px-6 text-center font-semibold text-lg">' + code + '</td><td class="py-4 px-6 text-right font-bold text-xl ' + (profit >= 0 ? 'text-green-400' : 'text-red-400') + '">' + formatMoney(profit) + '</td><td class="py-4 px-6 text-center"><button onclick="viewEmployee(\'' + code + '\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded mr-2 text-sm font-semibold">Xem</button><button onclick="editEmployee(\'' + code + '\')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded mr-2 text-sm font-semibold">Sửa</button><button onclick="deleteEmployee(\'' + code + '\')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-semibold">Xóa</button></td></tr>');
+        }
+        
+        document.getElementById('team2-list').innerHTML = '<div class="border-2 border-purple-500 rounded-lg overflow-hidden bg-gray-900"><div class="overflow-x-auto"><table class="w-full"><thead class="bg-purple-600"><tr><th class="py-4 px-6 text-center text-lg font-bold text-white">MÃ SỐ</th><th class="py-4 px-6 text-center text-lg font-bold text-white">DOANH THU</th><th class="py-4 px-6 text-center text-lg font-bold text-white">THAO TÁC</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div></div>';
+        
+        document.getElementById('team2-count').textContent = team2Codes.length;
+        document.getElementById('team2-transactions').textContent = team2TransactionCount;
+        document.getElementById('team2-average').textContent = formatMoney(team2Total / team2Codes.length);
+        document.getElementById('team2-total').textContent = formatMoney(team2Total);
+        document.getElementById('team2-section').classList.remove('hidden');
+      } else {
+        document.getElementById('team2-section').classList.add('hidden');
+      }
+      
+      if (otherCodes.length > 0) {
+        const rows = [];
+        for (let i = 0; i < otherCodes.length; i++) {
+          const code = otherCodes[i];
+          const data = employeeData.get(code);
+          const profit = data.deposits - data.withdrawals;
+          otherTotal += profit;
+          grandTotal += profit;
+          
+          rows.push('<tr class="border-b border-gray-700 hover:bg-gray-700 text-gray-200"><td class="py-4 px-6 text-center font-semibold text-lg">' + code + '</td><td class="py-4 px-6 text-right font-bold text-xl ' + (profit >= 0 ? 'text-green-400' : 'text-red-400') + '">' + formatMoney(profit) + '</td><td class="py-4 px-6 text-center"><button onclick="viewEmployee(\'' + code + '\')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded mr-2 text-sm font-semibold">Xem</button><button onclick="editEmployee(\'' + code + '\')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded mr-2 text-sm font-semibold">Sửa</button><button onclick="deleteEmployee(\'' + code + '\')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm font-semibold">Xóa</button></td></tr>');
+        }
+        
+        document.getElementById('other-list').innerHTML = '<div class="border-2 border-gray-500 rounded-lg overflow-hidden bg-gray-900"><div class="overflow-x-auto"><table class="w-full"><thead class="bg-gray-600"><tr><th class="py-4 px-6 text-center text-lg font-bold text-white">MÃ SỐ</th><th class="py-4 px-6 text-center text-lg font-bold text-white">DOANH THU</th><th class="py-4 px-6 text-center text-lg font-bold text-white">THAO TÁC</th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div></div>';
+        document.getElementById('other-total').textContent = formatMoney(otherTotal);
+        document.getElementById('other-section').classList.remove('hidden');
+      } else {
+        document.getElementById('other-section').classList.add('hidden');
+      }
+      
+      document.getElementById('total-employees').textContent = employeeData.size;
+      document.getElementById('total-transactions').textContent = allTransactions.length;
+      document.getElementById('total-revenue').textContent = formatMoney(grandTotal);
+      document.getElementById('summary-section').classList.remove('hidden');
+    }
+
+    function formatMoney(amount) {
+      return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND'
+      }).format(amount);
+    }
+
+    async function editEmployee(employeeCode) {
+      const employeeTransactions = allTransactions.filter(t => t.employee_code === employeeCode);
+      
+      if (employeeTransactions.length === 0) return;
+      
+      let modalHtml = '<div class="space-y-4"><p class="text-gray-300 mb-4">Chọn giao dịch để chỉnh sửa:</p><div class="max-h-96 overflow-y-auto space-y-2">';
+      
+      employeeTransactions.forEach(t => {
+        const dateObj = new Date(t.date);
+        const formattedDate = dateObj.getDate() + '/' + (dateObj.getMonth() + 1) + '/' + dateObj.getFullYear();
+        modalHtml += '<div class="bg-gray-700 p-4 rounded-lg border border-gray-600"><div class="flex justify-between items-center"><div class="text-gray-200"><p class="font-semibold">' + formattedDate + ' - ' + t.time + '</p><p class="text-sm">' + (t.transaction_type === 'deposit' ? 'Nạp' : 'Rút') + ': ' + formatMoney(t.amount) + '</p>' + (t.order_type ? '<p class="text-xs text-gray-400">Loại: ' + t.order_type + '</p>' : '') + '</div><button onclick="editTransaction(\'' + t.__backendId + '\')" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">Sửa</button></div></div>';
+      });
+      
+      modalHtml += '</div></div>';
+      
+      showModal('Sửa Giao Dịch - Mã ' + employeeCode, modalHtml);
+    }
+
+    async function editTransaction(backendId) {
+      const transaction = allTransactions.find(t => t.__backendId === backendId);
+      if (!transaction) return;
+      
+      let modalHtml = '<form id="edit-form" class="space-y-4"><div><label class="block text-sm font-medium text-gray-300 mb-2">Ngày</label><input type="date" id="edit-date" value="' + transaction.date + '" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"></div><div><label class="block text-sm font-medium text-gray-300 mb-2">Giờ</label><input type="text" id="edit-time" value="' + transaction.time + '" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white" placeholder="HH:MM"></div><div><label class="block text-sm font-medium text-gray-300 mb-2">Số Tiền (VND)</label><input type="number" id="edit-amount" value="' + transaction.amount + '" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"></div>';
+      
+      if (transaction.order_type) {
+        modalHtml += '<div><label class="block text-sm font-medium text-gray-300 mb-2">Loại Đơn</label><input type="text" id="edit-order-type" value="' + transaction.order_type + '" class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white"></div>';
+      }
+      
+      modalHtml += '<button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-lg">Lưu Thay Đổi</button></form>';
+      
+      showModal('Chỉnh Sửa Giao Dịch', modalHtml);
+      
+      document.getElementById('edit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const updatedTransaction = {
+          ...transaction,
+          date: document.getElementById('edit-date').value,
+          time: document.getElementById('edit-time').value,
+          amount: parseInt(document.getElementById('edit-amount').value)
+        };
+        
+        if (transaction.order_type) {
+          const orderTypeInput = document.getElementById('edit-order-type');
+          if (orderTypeInput) {
+            updatedTransaction.order_type = orderTypeInput.value.toUpperCase();
+          }
+        }
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Đang lưu...';
+        
+        const result = await window.dataSdk.update(updatedTransaction);
+        
+        if (result.isOk) {
+          closeModal();
+          showMessage('Cập nhật thành công!', 'success');
+        } else {
+          showMessage('Có lỗi xảy ra khi cập nhật!', 'error');
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Lưu Thay Đổi';
+        }
+      });
+    }
+
+    async function deleteEmployee(employeeCode) {
+      const employeeTransactions = allTransactions.filter(t => t.employee_code === employeeCode);
+      
+      if (employeeTransactions.length === 0) return;
+      
+      const modalHtml = '<div class="space-y-4"><p class="text-gray-300 mb-4">Bạn có chắc muốn xóa tất cả ' + employeeTransactions.length + ' giao dịch của mã ' + employeeCode + '?</p><div class="flex space-x-4"><button onclick="confirmDeleteAll(\'' + employeeCode + '\')" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg">Xóa Tất Cả</button><button onclick="selectiveDelete(\'' + employeeCode + '\')" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg">Chọn Từng Cái</button><button onclick="closeModal()" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-lg">Hủy</button></div></div>';
+      
+      showModal('Xóa Giao Dịch - Mã ' + employeeCode, modalHtml);
+    }
+
+    async function confirmDeleteAll(employeeCode) {
+      const employeeTransactions = allTransactions.filter(t => t.employee_code === employeeCode);
+      
+      const modalContent = document.getElementById('modal-content');
+      modalContent.innerHTML = '<p class="text-center text-gray-300">Đang xóa...</p>';
+      
+      for (const transaction of employeeTransactions) {
+        await window.dataSdk.delete(transaction);
+      }
+      
+      closeModal();
+      showMessage('Đã xóa tất cả giao dịch!', 'success');
+    }
+
+    async function selectiveDelete(employeeCode) {
+      const employeeTransactions = allTransactions.filter(t => t.employee_code === employeeCode);
+      
+      let modalHtml = '<div class="space-y-4"><p class="text-gray-300 mb-4">Chọn giao dịch cần xóa:</p><div class="max-h-96 overflow-y-auto space-y-2">';
+      
+      employeeTransactions.forEach(t => {
+        const dateObj = new Date(t.date);
+        const formattedDate = dateObj.getDate() + '/' + (dateObj.getMonth() + 1) + '/' + dateObj.getFullYear();
+        modalHtml += '<div class="bg-gray-700 p-4 rounded-lg border border-gray-600"><div class="flex justify-between items-center"><div class="text-gray-200"><p class="font-semibold">' + formattedDate + ' - ' + t.time + '</p><p class="text-sm">' + (t.transaction_type === 'deposit' ? 'Nạp' : 'Rút') + ': ' + formatMoney(t.amount) + '</p>' + (t.order_type ? '<p class="text-xs text-gray-400">Loại: ' + t.order_type + '</p>' : '') + '</div><button onclick="deleteSingleTransaction(\'' + t.__backendId + '\')" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm">Xóa</button></div></div>';
+      });
+      
+      modalHtml += '</div></div>';
+      
+      showModal('Xóa Giao Dịch - Mã ' + employeeCode, modalHtml);
+    }
+
+    async function deleteSingleTransaction(backendId) {
+      const transaction = allTransactions.find(t => t.__backendId === backendId);
+      if (!transaction) return;
+      
+      const button = event.target;
+      button.disabled = true;
+      button.textContent = 'Đang xóa...';
+      
+      const result = await window.dataSdk.delete(transaction);
+      
+      if (result.isOk) {
+        showMessage('Đã xóa giao dịch!', 'success');
+        const employeeCode = transaction.employee_code;
+        const remainingTransactions = allTransactions.filter(t => t.employee_code === employeeCode);
+        
+        if (remainingTransactions.length === 0) {
+          closeModal();
+        } else {
+          selectiveDelete(employeeCode);
+        }
+      } else {
+        showMessage('Có lỗi xảy ra khi xóa!', 'error');
+        button.disabled = false;
+        button.textContent = 'Xóa';
+      }
+    }
+
+    function showModal(title, content) {
+      const modal = document.getElementById('details-modal');
+      const modalTitle = document.getElementById('modal-title');
+      const modalContent = document.getElementById('modal-content');
+      
+      modalTitle.textContent = title;
+      modalContent.innerHTML = content;
+      modal.classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('details-modal').classList.add('hidden');
+    }
+
+    function viewEmployee(employeeCode) {
+      const employeeTransactions = allTransactions.filter(t => t.employee_code === employeeCode);
+      
+      if (employeeTransactions.length === 0) return;
+      
+      const deposits = employeeTransactions.filter(t => t.transaction_type === 'deposit');
+      const withdrawals = employeeTransactions.filter(t => t.transaction_type === 'withdrawal');
+      
+      const depositTotal = deposits.reduce((sum, t) => sum + t.amount, 0);
+      const withdrawalTotal = withdrawals.reduce((sum, t) => sum + t.amount, 0);
+      const profit = depositTotal - withdrawalTotal;
+      
+      let modalHtml = '<div class="space-y-6">';
+      
+      if (deposits.length > 0) {
+        modalHtml += '<div><h4 class="text-lg font-semibold text-green-400 mb-3">Đơn Nạp (' + deposits.length + ' giao dịch)</h4><div class="bg-gray-900 rounded-lg overflow-hidden border border-green-500"><table class="w-full"><thead class="bg-green-600"><tr><th class="py-2 px-4 text-left text-sm font-semibold text-white">Ngày</th><th class="py-2 px-4 text-left text-sm font-semibold text-white">Giờ</th><th class="py-2 px-4 text-right text-sm font-semibold text-white">Số Tiền</th><th class="py-2 px-4 text-center text-sm font-semibold text-white">Loại Đơn</th></tr></thead><tbody>';
+        
+        deposits.forEach(t => {
+          const dateObj = new Date(t.date);
+          const formattedDate = dateObj.getDate() + '/' + (dateObj.getMonth() + 1) + '/' + dateObj.getFullYear();
+          modalHtml += '<tr class="border-b border-gray-700 text-gray-200"><td class="py-2 px-4">' + formattedDate + '</td><td class="py-2 px-4">' + t.time + '</td><td class="py-2 px-4 text-right font-medium">' + formatMoney(t.amount) + '</td><td class="py-2 px-4 text-center"><span class="px-2 py-1 rounded text-xs font-semibold ' + (t.order_type === 'DA' ? 'bg-green-500 text-white' : 'bg-gray-600 text-gray-200') + '">' + t.order_type + '</span></td></tr>';
+        });
+        
+        modalHtml += '</tbody><tfoot class="bg-green-700 font-semibold text-white"><tr><td colspan="2" class="py-2 px-4">Tổng:</td><td class="py-2 px-4 text-right">' + formatMoney(depositTotal) + '</td><td class="py-2 px-4"></td></tr></tfoot></table></div></div>';
+      }
+      
+      if (withdrawals.length > 0) {
+        modalHtml += '<div><h4 class="text-lg font-semibold text-red-400 mb-3">Đơn Rút (' + withdrawals.length + ' giao dịch)</h4><div class="bg-gray-900 rounded-lg overflow-hidden border border-red-500"><table class="w-full"><thead class="bg-red-600"><tr><th class="py-2 px-4 text-left text-sm font-semibold text-white">Ngày</th><th class="py-2 px-4 text-left text-sm font-semibold text-white">Giờ</th><th class="py-2 px-4 text-right text-sm font-semibold text-white">Số Tiền</th></tr></thead><tbody>';
+        
+        withdrawals.forEach(t => {
+          const dateObj = new Date(t.date);
+          const formattedDate = dateObj.getDate() + '/' + (dateObj.getMonth() + 1) + '/' + dateObj.getFullYear();
+          modalHtml += '<tr class="border-b border-gray-700 text-gray-200"><td class="py-2 px-4">' + formattedDate + '</td><td class="py-2 px-4">' + t.time + '</td><td class="py-2 px-4 text-right font-medium">' + formatMoney(t.amount) + '</td></tr>';
+        });
+        
+        modalHtml += '</tbody><tfoot class="bg-red-700 font-semibold text-white"><tr><td colspan="2" class="py-2 px-4">Tổng:</td><td class="py-2 px-4 text-right">' + formatMoney(withdrawalTotal) + '</td></tr></tfoot></table></div></div>';
+      }
+      
+      modalHtml += '<div class="bg-gray-900 p-4 rounded-lg border-2 border-green-500"><div class="flex justify-between items-center"><span class="text-lg font-semibold text-gray-300">TỔNG DOANH THU:</span><span class="text-2xl font-bold ' + (profit >= 0 ? 'text-green-400' : 'text-red-400') + '">' + formatMoney(profit) + '</span></div></div>';
+      
+      modalHtml += '</div>';
+      
+      showModal('Chi Tiết Mã ' + employeeCode, modalHtml);
+    }
+
+    window.viewEmployee = viewEmployee;
+    window.editEmployee = editEmployee;
+    window.editTransaction = editTransaction;
+    window.deleteEmployee = deleteEmployee;
+    window.confirmDeleteAll = confirmDeleteAll;
+    window.selectiveDelete = selectiveDelete;
+    window.deleteSingleTransaction = deleteSingleTransaction;
+    window.closeModal = closeModal;
+    
+    initApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aee47557226f8fb',t:'MTc2NTg4OTEzNS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

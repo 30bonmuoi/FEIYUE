@@ -1,0 +1,1781 @@
+<!doctype html>
+<html lang="vi" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hệ Thống Chấm Công FeiYue</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    button {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      touch-action: manipulation;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.1s;
+    }
+
+    button:active {
+      transform: scale(0.95);
+    }
+
+    button:disabled {
+      pointer-events: none;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    @keyframes marquee {
+      from { transform: translateX(100%); }
+      to { transform: translateX(-100%); }
+    }
+
+    .animate-marquee {
+      display: inline-block;
+      animation: marquee 20s linear infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0.3; }
+    }
+
+    .blink-warning {
+      animation: blink 1s infinite;
+    }
+
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 350px;
+    }
+
+    .toast {
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      color: white;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      border: 2px solid #3b82f6;
+      animation: slideIn 0.3s ease-out;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .toast.error {
+      border-color: #ef4444;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .warning-banner {
+      position: fixed;
+      top: 60px;
+      left: 0;
+      right: 0;
+      background: rgba(239, 68, 68, 0.9);
+      color: white;
+      padding: 16px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+      z-index: 999;
+      display: none;
+    }
+
+    .warning-banner.active {
+      display: block;
+    }
+
+    @keyframes glitchPulse {
+      0%, 100% { 
+        opacity: 0.7;
+        text-shadow: 0 0 10px rgba(34, 197, 94, 0.8), 0 0 20px rgba(34, 197, 94, 0.5);
+      }
+      50% { 
+        opacity: 1;
+        text-shadow: 0 0 15px rgba(34, 197, 94, 1), 0 0 30px rgba(34, 197, 94, 0.8), 0 0 40px rgba(34, 197, 94, 0.6);
+      }
+    }
+
+    .glass-crack {
+      animation: glitchPulse 2s ease-in-out infinite;
+      position: relative;
+      display: inline-block;
+    }
+
+    .glass-crack::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: 
+        linear-gradient(135deg, transparent 45%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.3) 47%, transparent 47%, transparent 53%, rgba(255,255,255,0.3) 53%, rgba(255,255,255,0.3) 55%, transparent 55%),
+        linear-gradient(45deg, transparent 45%, rgba(255,255,255,0.2) 45%, rgba(255,255,255,0.2) 47%, transparent 47%, transparent 53%, rgba(255,255,255,0.2) 53%, rgba(255,255,255,0.2) 55%, transparent 55%);
+      background-size: 40px 40px;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .glass-crack::after {
+      content: '';
+      position: absolute;
+      top: -5px;
+      left: -5px;
+      right: -5px;
+      bottom: -5px;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.4) 0%, transparent 2%), 
+                  radial-gradient(circle at 70% 60%, rgba(255,255,255,0.3) 0%, transparent 3%),
+                  radial-gradient(circle at 50% 80%, rgba(255,255,255,0.35) 0%, transparent 2.5%);
+      pointer-events: none;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/element_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="h-full bg-gray-900 text-white overflow-auto">
+  <div id="app-wrapper" class="w-full h-full bg-gray-900">
+   <div class="toast-container" id="toast-container"></div>
+   <div id="notificationBanner" class="w-full bg-red-600 py-2 overflow-hidden relative">
+    <div class="whitespace-nowrap animate-marquee text-white font-bold text-lg">
+     THÔNG BÁO: LÊN CA THỨ 2-6: TRƯỚC 08:00 | THỨ 7: TRƯỚC 10:00 | CHỦ NHẬT: TRƯỚC 13:00 | TAN CA: SAU 23:00
+    </div>
+   </div>
+   <div class="w-full bg-yellow-600 py-1 text-center relative">
+    <p class="text-black font-semibold text-sm">GHI CHÚ: Nhấn F5 để làm mới hệ thống và tăng tốc độ</p><button id="logout-btn" class="absolute right-4 top-1/2 -translate-y-1/2 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-bold transition-all touch-manipulation select-none"> ĐĂNG XUẤT </button>
+   </div>
+   <div id="warningBanner" class="warning-banner blink-warning"></div>
+   <div id="login-screen" class="flex items-center justify-center min-h-screen p-4 relative overflow-hidden">
+    <canvas id="radarCanvas" class="absolute top-0 left-0 w-full h-full"></canvas>
+    <div class="relative z-10 w-full max-w-md">
+     <div class="text-center mb-8">
+      <div class="flex justify-center items-center mb-6">
+       <div class="relative">
+        <div class="w-32 h-32 bg-gradient-to-br from-green-500 to-green-700 rounded-full flex items-center justify-center shadow-2xl animate-pulse border-4 border-green-400"><span class="text-5xl font-black text-black" style="font-family: 'Arial Black', sans-serif; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">X&amp;B</span>
+        </div>
+       </div>
+      </div>
+      <h1 class="text-5xl font-black text-green-400 mb-2 tracking-wider" style="text-shadow: 0 0 20px rgba(34, 197, 94, 0.8);">FEIYUE SYSTEM</h1>
+      <div class="h-1 w-64 mx-auto bg-gradient-to-r from-transparent via-green-500 to-transparent"></div>
+     </div>
+     <div class="bg-black bg-opacity-90 border-2 border-green-500 rounded-lg shadow-2xl p-8 backdrop-blur-sm" style="box-shadow: 0 0 30px rgba(34, 197, 94, 0.3);">
+      <h2 class="text-2xl font-bold text-green-400 mb-6 text-center tracking-wide">ĐĂNG NHẬP FEIYUE</h2>
+      <form id="login-form" class="space-y-5">
+       <div><label class="block text-green-400 mb-2 font-semibold text-sm tracking-wide">MÃ SỐ ĐĂNG NHẬP</label> <input type="text" id="username" required class="w-full bg-gray-900 border-2 border-green-600 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400/50" autocomplete="username">
+       </div>
+       <div id="password-field" style="display: none;"><label class="block text-green-400 mb-2 font-semibold text-sm tracking-wide">MẬT KHẨU</label> <input type="password" id="password" class="w-full bg-gray-900 border-2 border-green-600 text-green-300 px-4 py-3 rounded focus:outline-none focus:border-green-400 focus:ring-2 focus:ring-green-400/50" autocomplete="current-password">
+       </div><button type="submit" class="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-black font-bold py-3 px-6 rounded text-lg transition-all transform hover:scale-105 shadow-lg" style="box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);"> ĐĂNG NHẬP </button>
+      </form>
+     </div>
+     <div class="mt-8 flex justify-center gap-6 opacity-50">
+      <div class="text-green-500" title="Secure Connection">
+       <svg class="w-8 h-8" fill="currentColor" viewbox="0 0 20 20"><path d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z" />
+       </svg>
+      </div>
+      <div class="text-green-500" title="Encrypted Data">
+       <svg class="w-8 h-8" fill="currentColor" viewbox="0 0 20 20"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" /> <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd" />
+       </svg>
+      </div>
+      <div class="text-green-500" title="Cloud System">
+       <svg class="w-8 h-8" fill="currentColor" viewbox="0 0 20 20"><path d="M5.5 16a3.5 3.5 0 01-.369-6.98 4 4 0 117.753-1.977A4.5 4.5 0 1113.5 16h-8z" />
+       </svg>
+      </div>
+      <div class="text-green-500" title="Real-time Monitoring">
+       <svg class="w-8 h-8" fill="currentColor" viewbox="0 0 20 20"><path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd" />
+       </svg>
+      </div>
+     </div>
+    </div>
+    <div class="absolute bottom-4 right-4 text-right text-xs text-green-600 z-10">
+     <p class="font-semibold">2025 FeiYue Management System</p>
+     <p class="text-green-700">Version 2.0.1 | All Rights Reserved</p>
+     <p class="text-green-700">Developed by FeiYue Tech Team</p>
+    </div>
+   </div>
+   <div id="admin-app" style="display: none;" class="min-h-screen flex flex-col">
+    <div class="flex-1 flex flex-col p-6">
+     <div class="max-w-7xl mx-auto w-full flex-1 flex flex-col">
+      <header class="bg-gradient-to-r from-red-900 to-orange-900 border-4 border-red-600 rounded-xl shadow-2xl p-6 mb-8">
+       <div class="text-center">
+        <h1 class="text-5xl font-extrabold text-red-300 mb-3">🔐 ADMIN CONTROL PANEL 🔐</h1>
+        <p class="text-red-200 text-2xl mb-2">Quản trị viên: <span id="admin-name" class="font-bold text-yellow-400"></span></p>
+        <p class="text-gray-400 text-sm" id="admin-current-time"></p>
+       </div>
+      </header>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+       <div class="bg-red-900 bg-opacity-50 border-2 border-red-600 rounded-xl p-6 shadow-lg">
+        <h3 class="text-2xl font-bold text-red-300 mb-4">XÓA THEO MÃ SỐ</h3>
+        <div class="space-y-4">
+         <div><label class="block text-red-200 mb-2 font-semibold">Nhập mã số nhân viên:</label> <input type="text" id="delete-user-id" placeholder="VD: 2001" class="w-full bg-gray-900 border-2 border-red-600 text-red-300 px-4 py-3 rounded focus:outline-none focus:border-red-400">
+         </div><button id="btn-delete-user" class="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-6 rounded transition-all touch-manipulation select-none"> XÓA DỮ LIỆU MÃ SỐ </button>
+         <p class="text-red-400 text-sm">⚠️ Xác nhận 2 lần trước khi xóa</p>
+        </div>
+       </div>
+       <div class="bg-red-900 bg-opacity-50 border-2 border-red-600 rounded-xl p-6 shadow-lg">
+        <h3 class="text-2xl font-bold text-red-300 mb-4">XÓA TOÀN BỘ DỮ LIỆU</h3>
+        <div class="space-y-4">
+         <div class="bg-red-950 border border-red-600 rounded p-4">
+          <p class="text-red-400 font-bold text-lg mb-2">⚠️ CẢNH BÁO NGHIÊM TRỌNG ⚠️</p>
+          <p class="text-red-300 text-sm">Hành động này sẽ XÓA TẤT CẢ dữ liệu của TẤT CẢ nhân viên và KHÔNG THỂ KHÔI PHỤC!</p>
+         </div><button id="btn-delete-all-confirm" class="w-full bg-gradient-to-r from-red-700 to-red-900 hover:from-red-800 hover:to-red-950 text-white font-bold py-3 px-6 rounded transition-all touch-manipulation select-none"> XÓA TOÀN BỘ HỆ THỐNG </button>
+         <p class="text-red-400 text-sm blink-warning">🚨 Nút tự động hủy sau 5 giây</p>
+        </div>
+       </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+       <div class="bg-blue-900 bg-opacity-50 border-2 border-blue-600 rounded-xl p-4 text-center">
+        <p class="text-blue-300 text-sm mb-2">TỔNG BẢN GHI</p>
+        <p class="text-blue-400 text-3xl font-bold" id="admin-total-records">0</p>
+       </div>
+       <div class="bg-green-900 bg-opacity-50 border-2 border-green-600 rounded-xl p-4 text-center">
+        <p class="text-green-300 text-sm mb-2">NHÂN VIÊN HOẠT ĐỘNG</p>
+        <p class="text-green-400 text-3xl font-bold" id="admin-active-users">0</p>
+       </div>
+       <div class="bg-yellow-900 bg-opacity-50 border-2 border-yellow-600 rounded-xl p-4 text-center">
+        <p class="text-yellow-300 text-sm mb-2">TỔNG VI PHẠM</p>
+        <p class="text-yellow-400 text-3xl font-bold" id="admin-total-violations">0</p>
+       </div>
+       <div class="bg-red-900 bg-opacity-50 border-2 border-red-600 rounded-xl p-4 text-center">
+        <p class="text-red-300 text-sm mb-2">TỔNG TIỀN PHẠT</p>
+        <p class="text-red-400 text-3xl font-bold" id="admin-total-fines">$0</p>
+       </div>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+       <div class="bg-purple-900 bg-opacity-50 border-2 border-purple-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-purple-300 mb-3">LỊCH SỬ CHUNG</h3>
+        <div class="space-y-2 max-h-96 overflow-y-auto" id="admin-common-history"></div>
+       </div>
+       <div class="bg-red-900 bg-opacity-50 border-2 border-red-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-red-300 mb-3">LỊCH SỬ PHẠT</h3>
+        <div class="space-y-2 max-h-96 overflow-y-auto" id="admin-violation-history"></div>
+       </div>
+       <div class="bg-blue-900 bg-opacity-50 border-2 border-blue-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-blue-300 mb-3">DANH SÁCH NHÂN VIÊN</h3>
+        <div class="bg-blue-950/50 border border-blue-600/30 rounded p-2 mb-2">
+         <div class="grid grid-cols-4 gap-2 text-xs font-bold text-blue-300">
+          <div>
+           MÃ SỐ
+          </div>
+          <div class="text-center">
+           SNLC
+          </div>
+          <div class="text-center">
+           SNVM
+          </div>
+          <div class="text-right">
+           PHẠT
+          </div>
+         </div>
+        </div>
+        <div class="space-y-1 max-h-80 overflow-y-auto" id="admin-employee-list"></div>
+       </div>
+       <div class="bg-yellow-900 bg-opacity-50 border-2 border-yellow-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-yellow-300 mb-3">NHÂN VIÊN ĐANG NGHỈ</h3>
+        <div class="space-y-3 max-h-96 overflow-y-auto" id="admin-break-status"></div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <footer class="bg-gray-950 border-t-2 border-gray-800 py-4">
+     <div class="max-w-7xl mx-auto px-6 text-center">
+      <p class="text-gray-500 text-sm">2025 FeiYue Management System | All Rights Reserved</p>
+      <p class="text-gray-600 text-xs mt-1">Developed by: IT-3040 (X-TEAM)</p>
+     </div>
+    </footer>
+   </div>
+   <div id="boss-app" style="display: none;" class="min-h-screen flex flex-col">
+    <div class="flex-1 flex flex-col p-6">
+     <div class="max-w-7xl mx-auto w-full flex-1 flex flex-col">
+      <header class="bg-gradient-to-r from-purple-900 to-red-900 border-4 border-purple-600 rounded-xl shadow-2xl p-6 mb-8">
+       <div class="text-center">
+        <h1 class="text-5xl font-extrabold text-purple-300 mb-3">GIAO DIỆN QUẢN LÝ</h1>
+        <p class="text-purple-200 text-2xl mb-2">Người dùng: <span id="boss-name" class="font-bold text-yellow-400"></span></p>
+        <p class="text-gray-400 text-sm" id="boss-current-time"></p>
+       </div>
+      </header>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+       <div class="bg-purple-900 bg-opacity-50 border-2 border-purple-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-purple-300 mb-3">LỊCH SỬ CHUNG</h3>
+        <div class="space-y-2 max-h-96 overflow-y-auto" id="boss-common-history"></div>
+       </div>
+       <div class="bg-red-900 bg-opacity-50 border-2 border-red-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-red-300 mb-3">LỊCH SỬ PHẠT</h3>
+        <div class="space-y-2 max-h-96 overflow-y-auto" id="boss-violation-history"></div>
+       </div>
+       <div class="bg-blue-900 bg-opacity-50 border-2 border-blue-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-blue-300 mb-3">DANH SÁCH NHÂN VIÊN</h3>
+        <div class="bg-blue-950/50 border border-blue-600/30 rounded p-2 mb-2">
+         <div class="grid grid-cols-4 gap-2 text-xs font-bold text-blue-300">
+          <div>
+           MÃ SỐ
+          </div>
+          <div class="text-center">
+           SNLC
+          </div>
+          <div class="text-center">
+           SNVM
+          </div>
+          <div class="text-right">
+           PHẠT
+          </div>
+         </div>
+        </div>
+        <div class="space-y-1 max-h-80 overflow-y-auto" id="boss-employee-list"></div>
+       </div>
+       <div class="bg-yellow-900 bg-opacity-50 border-2 border-yellow-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-yellow-300 mb-3">NHÂN VIÊN ĐANG NGHỈ</h3>
+        <div class="space-y-3 max-h-96 overflow-y-auto" id="boss-break-status"></div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <footer class="bg-gray-950 border-t-2 border-gray-800 py-4">
+     <div class="max-w-7xl mx-auto px-6 text-center">
+      <p class="text-gray-500 text-sm">2025 FeiYue Management System | All Rights Reserved</p>
+      <p class="text-gray-600 text-xs mt-1">Developed by: IT-3040 (X-TEAM)</p>
+     </div>
+    </footer>
+   </div>
+   <div id="main-app" style="display: none;" class="min-h-screen flex flex-col">
+    <div class="flex-1 flex flex-col p-6">
+     <div class="max-w-6xl mx-auto w-full flex-1 flex flex-col">
+      <header class="bg-gradient-to-r from-blue-900 to-purple-900 border-4 border-blue-600 rounded-xl shadow-2xl p-6 mb-8">
+       <div class="text-center">
+        <div class="flex justify-center items-center mb-4">
+         <div class="relative">
+          <div class="w-20 h-20 bg-gradient-to-br from-green-500 to-green-700 rounded-full flex items-center justify-center shadow-2xl border-4 border-green-400"><span class="text-3xl font-black text-black" style="font-family: 'Arial Black', sans-serif; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">X&amp;B</span>
+          </div>
+         </div>
+        </div>
+        <h1 class="text-4xl font-extrabold text-green-400 mb-3 tracking-wider" style="text-shadow: 0 0 20px rgba(34, 197, 94, 0.8);">FEIYUE INTERNAL SYSTEM</h1>
+        <p class="text-blue-200 text-2xl mb-2">Mã số: <span id="user-name" class="glass-crack font-black text-green-400" style="font-size: 3rem;"></span></p>
+        <p class="text-green-400 text-xl" id="status-text">Chưa lên ca</p>
+        <p class="text-gray-400 text-sm" id="current-time"></p>
+       </div>
+      </header>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-8 flex-1 mb-8"><button id="btn-check-in" class="bg-gradient-to-br from-green-600 to-green-800 hover:from-green-700 hover:to-green-900 border-4 border-green-500 text-white font-bold py-16 px-6 rounded-2xl text-3xl shadow-2xl flex flex-col items-center justify-center gap-4 active:scale-95 touch-manipulation select-none"> <span class="text-6xl pointer-events-none">CHECK</span> <span class="pointer-events-none">LÊN CA</span> </button> <button id="btn-bathroom" disabled class="bg-gradient-to-br from-blue-600 to-blue-800 border-4 border-blue-500 text-white font-bold py-16 px-6 rounded-2xl text-3xl shadow-2xl flex flex-col items-center justify-center gap-4 opacity-50 cursor-not-allowed touch-manipulation select-none"> <span class="text-6xl pointer-events-none">WC</span> <span class="pointer-events-none">VỆ SINH</span> <span class="text-sm pointer-events-none">0/3</span> </button> <button id="btn-smoke" disabled class="bg-gradient-to-br from-orange-600 to-orange-800 border-4 border-orange-500 text-white font-bold py-16 px-6 rounded-2xl text-3xl shadow-2xl flex flex-col items-center justify-center gap-4 opacity-50 cursor-not-allowed touch-manipulation select-none"> <span class="text-6xl pointer-events-none">SMOKE</span> <span class="pointer-events-none">HÚT THUỐC</span> <span class="text-sm pointer-events-none">0/8</span> </button> <button id="btn-phone" disabled class="bg-gradient-to-br from-purple-600 to-purple-800 border-4 border-purple-500 text-white font-bold py-16 px-6 rounded-2xl text-3xl shadow-2xl flex flex-col items-center justify-center gap-4 opacity-50 cursor-not-allowed touch-manipulation select-none"> <span class="text-6xl pointer-events-none">CALL</span> <span class="pointer-events-none">GỌI ĐIỆN</span> </button> <button id="btn-return" disabled class="bg-gradient-to-br from-yellow-600 to-yellow-800 border-4 border-yellow-500 text-white font-bold py-16 px-6 rounded-2xl text-3xl shadow-2xl flex flex-col items-center justify-center gap-4 opacity-50 cursor-not-allowed touch-manipulation select-none"> <span class="text-6xl pointer-events-none">BACK</span> <span class="pointer-events-none">QUAY LẠI</span> </button> <button id="btn-check-out" disabled class="bg-gradient-to-br from-red-600 to-red-800 border-4 border-red-500 text-white font-bold py-16 px-6 rounded-2xl text-3xl shadow-2xl flex flex-col items-center justify-center gap-4 opacity-50 cursor-not-allowed touch-manipulation select-none"> <span class="text-6xl pointer-events-none">EXIT</span> <span class="pointer-events-none">TAN CA</span> </button>
+      </div>
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+       <div class="bg-red-900 bg-opacity-50 border-2 border-red-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-red-300 mb-2">VI PHẠM CỦA BẠN</h3>
+        <p class="text-red-400 mb-3">Tổng phạt: <span id="total-fine" class="font-bold text-yellow-400">$0</span></p>
+        <div class="space-y-2 max-h-96 overflow-y-auto" id="violation-history"></div>
+       </div>
+       <div class="bg-green-900 bg-opacity-50 border-2 border-green-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-green-300 mb-2">HOẠT ĐỘNG CỦA BẠN</h3>
+        <p class="text-green-400 mb-3">Ngày công: <span id="work-days" class="font-bold text-yellow-400">0</span></p>
+        <div class="space-y-2 max-h-96 overflow-y-auto" id="activity-history"></div>
+       </div>
+       <div class="bg-purple-900 bg-opacity-50 border-2 border-purple-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-purple-300 mb-2">LỊCH SỬ CHUNG</h3>
+        <div class="space-y-2 max-h-96 overflow-y-auto" id="common-history"></div>
+       </div>
+       <div class="bg-blue-900 bg-opacity-50 border-2 border-blue-600 rounded-xl p-4 shadow-lg">
+        <h3 class="text-xl font-bold text-blue-300 mb-2">NỘI QUY VÀ HƯỚNG DẪN</h3>
+        <div class="space-y-3 max-h-96 overflow-y-auto text-xs">
+         <div class="bg-blue-950/50 border border-blue-600/30 rounded p-3">
+          <p class="text-blue-300 font-bold mb-2">GIỜ LÀM VIỆC:</p>
+          <p class="text-blue-400">Thứ 2-6: Trước 08:00</p>
+          <p class="text-blue-400">Thứ 7: Trước 10:00</p>
+          <p class="text-blue-400">Chủ nhật: Trước 13:00</p>
+          <p class="text-blue-400">Tan ca: Sau 23:00</p>
+         </div>
+         <div class="bg-blue-950/50 border border-blue-600/30 rounded p-3">
+          <p class="text-blue-300 font-bold mb-2">NGHỈ GIẢI LAO:</p>
+          <p class="text-blue-400">Vệ sinh: Tối đa 3 lần/15 phút</p>
+          <p class="text-blue-400">Hút thuốc: Tối đa 8 lần/8 phút</p>
+          <p class="text-blue-400">Gọi điện: Không giới hạn</p>
+          <p class="text-red-400 mt-2">Cảnh báo còn 2 phút!</p>
+          <p class="text-red-400">Hết giờ: Phạt ngay lập tức!</p>
+          <p class="text-red-400">Sau 10 phút: Tự động quay lại!</p>
+         </div>
+         <div class="bg-blue-950/50 border border-blue-600/30 rounded p-3">
+          <p class="text-blue-300 font-bold mb-2">MỨC PHẠT:</p>
+          <p class="text-red-400">Lên ca trễ: $10</p>
+          <p class="text-red-400">Tan ca sớm: $10</p>
+          <p class="text-red-400">Vệ sinh quá giới hạn: $10</p>
+          <p class="text-red-400">Hút thuốc quá giới hạn: $10</p>
+          <p class="text-red-400">Quá thời gian nghỉ: $10</p>
+         </div>
+         <div class="bg-blue-950/50 border border-blue-600/30 rounded p-3">
+          <p class="text-blue-300 font-bold mb-2">HƯỚNG DẪN:</p>
+          <p class="text-blue-400">1. Bấm LÊN CA khi bắt đầu</p>
+          <p class="text-blue-400">2. Bấm nút nghỉ khi cần thiết</p>
+          <p class="text-blue-400">3. Bấm QUAY LẠI sau nghỉ</p>
+          <p class="text-blue-400">4. Bấm TAN CA khi kết thúc</p>
+          <p class="text-green-400 mt-2">Hệ thống tự động reset lúc 01:00</p>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div id="online-panel" class="fixed bottom-6 left-6 z-50"><button id="toggle-online-btn" class="bg-gradient-to-r from-gray-800 to-gray-900 border-2 border-green-500 text-white px-4 py-2 rounded-lg shadow-lg hover:from-gray-700 hover:to-gray-800 transition-all flex items-center gap-2 touch-manipulation select-none" style="box-shadow: 0 0 15px rgba(34, 197, 94, 0.3);"> <span id="online-icon">USER</span> <span id="online-count" class="font-bold">0/38</span> </button>
+       <div id="online-list" class="hidden mt-2 bg-gray-900 bg-opacity-95 border-2 border-green-500 rounded-lg shadow-2xl p-4 w-80 max-h-96 overflow-y-auto" style="box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);">
+        <div class="flex justify-between items-center mb-3 border-b border-green-600 pb-2">
+         <h3 class="text-green-400 font-bold text-lg">TRẠNG THÁI NHÂN VIÊN</h3><button id="close-online-btn" class="text-red-400 hover:text-red-300 font-bold touch-manipulation select-none">X</button>
+        </div>
+        <div class="mb-3">
+         <p class="text-green-400 font-semibold mb-2">ONLINE (<span id="online-total">0</span>)</p>
+         <div id="online-users" class="space-y-1 ml-2"></div>
+        </div>
+        <div>
+         <p class="text-gray-400 font-semibold mb-2">OFFLINE (<span id="offline-total">38</span>)</p>
+         <div id="offline-users" class="space-y-1 ml-2"></div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <footer class="bg-gray-950 border-t-2 border-gray-800 py-4">
+     <div class="max-w-6xl mx-auto px-6 text-center">
+      <p class="text-gray-500 text-sm">2025 FeiYue Management System | All Rights Reserved</p>
+      <p class="text-gray-600 text-xs mt-1">Developed by: IT-3040 (X-TEAM)</p>
+     </div>
+    </footer>
+   </div>
+  </div>
+  <script>
+    const EMPLOYEES = ['1065','1319','1110','1317','1114','1103','1147','1318','1144','1304','1177','1230','1309','1170','1305','1316','1262','1306','1063','1311','1315','1235','1238','1313','1320','1152','3022','1196','3003','3075','3076','3004','3025','3079','3078','3001','3008','3081'];
+    const BOSS_SUPPORT = { 'BOSS': '123456', 'SUPPORT': '123456' };
+    const ADMIN_ACCOUNTS = { 'ADMIN': '123456' };
+    
+    const SHIFT_TIMES = {
+      weekday: { start: '08:00', end: '23:00' },
+      saturday: { start: '10:00', end: '23:00' },
+      sunday: { start: '13:00', end: '23:00' }
+    };
+
+    const BREAK_LIMITS = {
+      bathroom: { max: 3, duration: 15 * 60 * 1000, warning: 2 * 60 * 1000 },
+      smoke: { max: 8, duration: 8 * 60 * 1000, warning: 2 * 60 * 1000 },
+      phone: { max: 999, duration: 999 * 60 * 1000, warning: 999 * 60 * 1000 }
+    };
+
+    const FINE_AMOUNT = 10;
+    const AUTO_RETURN_DELAY = 10 * 60 * 1000;
+    const AUTO_RESET_TIME = '01:00';
+
+    let currentUser = null;
+    let attendanceData = [];
+    let recordCount = 0;
+    let isProcessing = false;
+    let updateScheduled = false;
+    let userState = {
+      checkedIn: false,
+      onBreak: false,
+      breakType: null,
+      breakStartTime: null,
+      breakCounts: { bathroom: 0, smoke: 0, phone: 0 },
+      warningTimer: null,
+      autoReturnTimer: null,
+      overtimeTimer: null
+    };
+
+    const dataHandler = {
+      onDataChanged(data) {
+        attendanceData = data;
+        recordCount = data.length;
+        
+        if (!updateScheduled && currentUser) {
+          updateScheduled = true;
+          requestAnimationFrame(() => {
+            updateScheduled = false;
+            if (ADMIN_ACCOUNTS[currentUser]) {
+              updateAdminView();
+            } else if (BOSS_SUPPORT[currentUser]) {
+              updateBossView();
+            } else {
+              updateUserState();
+              updateHistories();
+            }
+          });
+        }
+      }
+    };
+
+    async function initApp() {
+      if (window.dataSdk) {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          showToast('Lỗi khởi tạo hệ thống', true);
+        }
+      }
+      
+      setupButtonListeners();
+      updateCurrentTime();
+      setInterval(updateCurrentTime, 1000);
+      setInterval(checkAutoViolations, 120000);
+      checkAutoReset();
+      setInterval(checkAutoReset, 120000);
+      setInterval(() => {
+        if (currentUser && (ADMIN_ACCOUNTS[currentUser] || BOSS_SUPPORT[currentUser])) {
+          requestAnimationFrame(() => {
+            if (ADMIN_ACCOUNTS[currentUser]) {
+              updateAdminBreakStatus();
+            } else {
+              updateBossBreakStatus();
+            }
+          });
+        }
+      }, 2000);
+    }
+
+    function setupButtonListeners() {
+      const handlers = {
+        'btn-check-in': (e) => { e.preventDefault(); handleCheckIn(); },
+        'btn-bathroom': (e) => { e.preventDefault(); handleStartBreak('bathroom'); },
+        'btn-smoke': (e) => { e.preventDefault(); handleStartBreak('smoke'); },
+        'btn-phone': (e) => { e.preventDefault(); handleStartBreak('phone'); },
+        'btn-return': (e) => { e.preventDefault(); handleReturnPosition(); },
+        'btn-check-out': (e) => { e.preventDefault(); handleCheckOut(); },
+        'toggle-online-btn': (e) => { e.preventDefault(); toggleOnlinePanel(); },
+        'close-online-btn': (e) => { e.preventDefault(); toggleOnlinePanel(); },
+        'logout-btn': (e) => { e.preventDefault(); handleLogout(); }
+      };
+
+      Object.keys(handlers).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('click', handlers[id]);
+          el.addEventListener('touchstart', handlers[id], { passive: false });
+        }
+      });
+    }
+
+    function handleLogout() {
+      currentUser = null;
+      userState = {
+        checkedIn: false,
+        onBreak: false,
+        breakType: null,
+        breakStartTime: null,
+        breakCounts: { bathroom: 0, smoke: 0, phone: 0 },
+        warningTimer: null,
+        autoReturnTimer: null,
+        overtimeTimer: null
+      };
+      
+      [userState.warningTimer, userState.autoReturnTimer, userState.overtimeTimer].forEach(t => t && clearTimeout(t));
+      hideWarning();
+      
+      document.getElementById('login-screen').style.display = 'flex';
+      ['main-app', 'boss-app', 'admin-app'].forEach(id => document.getElementById(id).style.display = 'none');
+      
+      document.getElementById('username').value = '';
+      document.getElementById('password').value = '';
+      document.getElementById('password-field').style.display = 'none';
+      
+      showToast('Đã đăng xuất thành công!');
+    }
+
+    function setupAdminButtons() {
+      const deleteUserBtn = document.getElementById('btn-delete-user');
+      const deleteAllBtn = document.getElementById('btn-delete-all-confirm');
+
+      deleteUserBtn.replaceWith(deleteUserBtn.cloneNode(true));
+      const newDeleteUserBtn = document.getElementById('btn-delete-user');
+      
+      newDeleteUserBtn.addEventListener('click', async () => {
+        const userId = document.getElementById('delete-user-id').value.trim();
+        
+        if (!userId) {
+          showToast('Vui lòng nhập mã số!', true);
+          return;
+        }
+
+        const userRecords = attendanceData.filter(r => r.userId === userId);
+        
+        if (userRecords.length === 0) {
+          showToast(`Không tìm thấy dữ liệu của mã số ${userId}!`, true);
+          return;
+        }
+
+        const tempBtn = newDeleteUserBtn.cloneNode(true);
+        tempBtn.textContent = 'XÁC NHẬN XÓA?';
+        tempBtn.className = 'w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-6 rounded transition-all touch-manipulation select-none';
+        
+        newDeleteUserBtn.parentNode.replaceChild(tempBtn, newDeleteUserBtn);
+
+        tempBtn.addEventListener('click', async () => {
+          showToast(`Đang xóa dữ liệu mã số ${userId}...`);
+          
+          for (const record of userRecords) {
+            const result = await window.dataSdk.delete(record);
+            if (!result.isOk) {
+              showToast('Lỗi khi xóa dữ liệu!', true);
+              return;
+            }
+          }
+
+          showToast(`Đã xóa ${userRecords.length} bản ghi của mã số ${userId}!`);
+          document.getElementById('delete-user-id').value = '';
+          tempBtn.parentNode.replaceChild(newDeleteUserBtn, tempBtn);
+          setupAdminButtons();
+        }, { once: true });
+
+        setTimeout(() => {
+          if (tempBtn.parentNode) {
+            tempBtn.parentNode.replaceChild(newDeleteUserBtn, tempBtn);
+            setupAdminButtons();
+          }
+        }, 5000);
+      });
+
+      deleteAllBtn.replaceWith(deleteAllBtn.cloneNode(true));
+      const newDeleteAllBtn = document.getElementById('btn-delete-all-confirm');
+
+      newDeleteAllBtn.addEventListener('click', () => {
+        if (attendanceData.length === 0) {
+          showToast('Không có dữ liệu để xóa!', true);
+          return;
+        }
+
+        const tempBtn = newDeleteAllBtn.cloneNode(true);
+        tempBtn.textContent = `XÁC NHẬN XÓA ${attendanceData.length} BẢN GHI?`;
+        tempBtn.className = 'w-full bg-gradient-to-r from-red-700 to-red-900 hover:from-red-800 hover:to-red-950 text-white font-bold py-3 px-6 rounded transition-all blink-warning touch-manipulation select-none';
+        
+        newDeleteAllBtn.parentNode.replaceChild(tempBtn, newDeleteAllBtn);
+
+        tempBtn.addEventListener('click', async () => {
+          showToast('Đang xóa toàn bộ dữ liệu...');
+          
+          const allRecords = [...attendanceData];
+          for (const record of allRecords) {
+            const result = await window.dataSdk.delete(record);
+            if (!result.isOk) {
+              showToast('Lỗi khi xóa dữ liệu!', true);
+              return;
+            }
+          }
+
+          showToast(`Đã xóa toàn bộ ${allRecords.length} bản ghi!`);
+          tempBtn.parentNode.replaceChild(newDeleteAllBtn, tempBtn);
+          setupAdminButtons();
+        }, { once: true });
+
+        setTimeout(() => {
+          if (tempBtn.parentNode) {
+            tempBtn.parentNode.replaceChild(newDeleteAllBtn, tempBtn);
+            setupAdminButtons();
+          }
+        }, 5000);
+      });
+    }
+
+    function updateAdminView() {
+      if (!ADMIN_ACCOUNTS[currentUser]) return;
+      
+      document.getElementById('admin-name').textContent = currentUser;
+      const adminTimeEl = document.getElementById('admin-current-time');
+      if (adminTimeEl) {
+        const now = new Date();
+        adminTimeEl.textContent = now.toLocaleString('vi-VN', {
+          weekday: 'long',
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit'
+        });
+      }
+      
+      document.getElementById('admin-total-records').textContent = attendanceData.length;
+      
+      const activeUsers = new Set();
+      const today = getToday();
+      attendanceData.forEach(r => {
+        if (r.timestamp.startsWith(today) && r.action === 'LEN_CA') {
+          activeUsers.add(r.userId);
+        }
+      });
+      document.getElementById('admin-active-users').textContent = activeUsers.size;
+      
+      const violations = attendanceData.filter(r => r.fine > 0);
+      document.getElementById('admin-total-violations').textContent = violations.length;
+      
+      const totalFines = attendanceData.reduce((sum, r) => sum + (r.fine || 0), 0);
+      document.getElementById('admin-total-fines').textContent = '$' + totalFines;
+      
+      const commonContainer = document.getElementById('admin-common-history');
+      if (attendanceData.length === 0) {
+        commonContainer.innerHTML = '<p class="text-purple-600 text-sm">Chưa có hoạt động</p>';
+      } else {
+        commonContainer.innerHTML = attendanceData.slice(-20).reverse().map(a => {
+          const time = new Date(a.timestamp).toLocaleString('vi-VN');
+          const bgClass = a.fine > 0 ? 'bg-red-950/50' : 'bg-purple-950/50';
+          const borderClass = a.fine > 0 ? 'border-red-600/30' : 'border-purple-600/30';
+          const textClass = a.fine > 0 ? 'text-red-300' : 'text-purple-300';
+          const timeClass = a.fine > 0 ? 'text-red-600' : 'text-purple-600';
+          return `<div class="${bgClass} border ${borderClass} rounded p-2 text-xs">
+            <p class="${textClass} font-bold">${a.userId}: ${a.action}</p>
+            ${a.fine > 0 ? `<p class="text-red-400">Phạt: $${a.fine}</p>` : ''}
+            <p class="${timeClass}">${time}</p>
+          </div>`;
+        }).join('');
+      }
+
+      const violationContainer = document.getElementById('admin-violation-history');
+      if (violations.length === 0) {
+        violationContainer.innerHTML = '<p class="text-red-600 text-sm">Chưa có vi phạm</p>';
+      } else {
+        violationContainer.innerHTML = violations.slice(-20).reverse().map(v => {
+          const time = new Date(v.timestamp).toLocaleString('vi-VN');
+          return `<div class="bg-red-950/50 border border-red-600/30 rounded p-2 text-xs">
+            <p class="text-red-300 font-bold">${v.userId}: ${v.action}</p>
+            <p class="text-red-400">Phạt: $${v.fine} - ${v.reason}</p>
+            <p class="text-red-600">${time}</p>
+          </div>`;
+        }).join('');
+      }
+
+      const employeeStats = {};
+      EMPLOYEES.forEach(emp => {
+        employeeStats[emp] = { workDays: 0, totalFines: 0, violations: 0 };
+      });
+
+      attendanceData.forEach(record => {
+        if (employeeStats[record.userId]) {
+          employeeStats[record.userId].workDays += (record.workDays || 0);
+          employeeStats[record.userId].totalFines += record.fine;
+          if (record.fine > 0) {
+            employeeStats[record.userId].violations++;
+          }
+        }
+      });
+
+      const employeeContainer = document.getElementById('admin-employee-list');
+      employeeContainer.innerHTML = EMPLOYEES.map(emp => {
+        const stats = employeeStats[emp];
+        return `<div class="bg-blue-950/50 border border-blue-600/30 rounded p-2">
+          <div class="grid grid-cols-4 gap-2 text-xs text-blue-400">
+            <div class="font-bold">${emp}</div>
+            <div class="text-center">${stats.workDays}</div>
+            <div class="text-center">${stats.violations}</div>
+            <div class="text-right text-red-400">$${stats.totalFines}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      updateAdminBreakStatus();
+    }
+
+    function updateAdminBreakStatus() {
+      const today = getToday();
+      const onBreak = [];
+
+      EMPLOYEES.forEach(userId => {
+        const todayRecords = attendanceData.filter(r => 
+          r.userId === userId && r.timestamp.startsWith(today)
+        );
+
+        const lastBreak = todayRecords.filter(r => r.action.startsWith('BAT_DAU_')).pop();
+        const lastReturn = todayRecords.filter(r => r.action === 'QUAY_LAI').pop();
+
+        if (lastBreak && (!lastReturn || new Date(lastBreak.timestamp) > new Date(lastReturn.timestamp))) {
+          const breakType = lastBreak.breakType;
+          const breakStartTime = new Date(lastBreak.timestamp).getTime();
+          const elapsed = Date.now() - breakStartTime;
+          
+          let limit = 0;
+          let breakName = '';
+          if (breakType === 'bathroom') {
+            limit = 15 * 60 * 1000;
+            breakName = 'VỆ SINH';
+          } else if (breakType === 'smoke') {
+            limit = 8 * 60 * 1000;
+            breakName = 'HÚT THUỐC';
+          } else if (breakType === 'phone') {
+            limit = 999 * 60 * 1000;
+            breakName = 'GỌI ĐIỆN';
+          }
+
+          onBreak.push({ userId, breakType, breakName, breakStartTime, elapsed, limit });
+        }
+      });
+
+      const breakContainer = document.getElementById('admin-break-status');
+      if (onBreak.length === 0) {
+        breakContainer.innerHTML = '<p class="text-yellow-600 text-sm">Không có nhân viên đang nghỉ</p>';
+      } else {
+        breakContainer.innerHTML = onBreak.map(b => {
+          const remaining = Math.max(0, b.limit - b.elapsed);
+          const totalSeconds = Math.floor(remaining / 1000);
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          const percentage = Math.min(100, (b.elapsed / b.limit) * 100);
+          const isOvertime = b.elapsed > b.limit;
+          const overtimeSeconds = isOvertime ? Math.floor((b.elapsed - b.limit) / 1000) : 0;
+          const overtimeMinutes = Math.floor(overtimeSeconds / 60);
+          const overtimeSecs = overtimeSeconds % 60;
+
+          return `<div class="bg-yellow-950/50 border border-yellow-600/30 rounded p-3">
+            <div class="flex justify-between items-center mb-2">
+              <p class="text-yellow-300 font-bold">${b.userId}: ${b.breakName}</p>
+              ${isOvertime ? 
+                `<p class="text-red-400 font-bold blink-warning">QUÁ ${overtimeMinutes}:${String(overtimeSecs).padStart(2, '0')}</p>` :
+                `<p class="text-yellow-400 font-bold">${minutes}:${String(seconds).padStart(2, '0')}</p>`
+              }
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+              <div class="h-full transition-all duration-1000 ${isOvertime ? 'bg-red-600' : percentage > 80 ? 'bg-yellow-500' : 'bg-green-500'}" style="width: ${Math.min(100, percentage)}%"></div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    async function handleCheckIn() {
+      if (isProcessing) return;
+      isProcessing = true;
+      
+      updateUIImmediate('checking-in');
+      
+      setTimeout(async () => {
+        await checkIn();
+        isProcessing = false;
+      }, 0);
+    }
+
+    async function handleStartBreak(type) {
+      if (isProcessing) return;
+      isProcessing = true;
+      
+      updateUIImmediate('starting-break', type);
+      
+      setTimeout(async () => {
+        await startBreak(type);
+        isProcessing = false;
+      }, 0);
+    }
+
+    async function handleReturnPosition() {
+      if (isProcessing) return;
+      isProcessing = true;
+      
+      updateUIImmediate('returning');
+      
+      setTimeout(async () => {
+        await returnPosition();
+        isProcessing = false;
+      }, 0);
+    }
+
+    async function handleCheckOut() {
+      if (isProcessing) return;
+      isProcessing = true;
+      
+      updateUIImmediate('checking-out');
+      
+      setTimeout(async () => {
+        await checkOut();
+        isProcessing = false;
+      }, 0);
+    }
+
+    function updateUIImmediate(action, type = null) {
+      const statusText = document.getElementById('status-text');
+      
+      const messages = {
+        'checking-in': 'Đang xử lý lên ca...',
+        'starting-break': `Đang xử lý ${type === 'bathroom' ? 'vệ sinh' : type === 'smoke' ? 'hút thuốc' : 'gọi điện'}...`,
+        'returning': 'Đang xử lý quay lại...',
+        'checking-out': 'Đang xử lý tan ca...'
+      };
+      
+      statusText.textContent = messages[action] || 'Đang xử lý...';
+      statusText.className = 'text-yellow-400 text-xl';
+    }
+
+    function updateCurrentTime() {
+      const now = new Date();
+      const timeStr = now.toLocaleString('vi-VN', {
+        weekday: 'long',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+      ['current-time', 'boss-current-time', 'admin-current-time'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = timeStr;
+      });
+    }
+
+    function showToast(message, isError = false) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast ${isError ? 'error' : ''}`;
+      toast.textContent = message;
+      container.appendChild(toast);
+      setTimeout(() => {
+        if (container.contains(toast)) {
+          container.removeChild(toast);
+        }
+      }, 3000);
+    }
+
+    function showWarning(message) {
+      const banner = document.getElementById('warningBanner');
+      banner.textContent = message;
+      banner.classList.add('active');
+    }
+
+    function hideWarning() {
+      document.getElementById('warningBanner').classList.remove('active');
+    }
+
+    function initRadarEffect() {
+      const canvas = document.getElementById('radarCanvas');
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true });
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      let angle = 0;
+      let frameCount = 0;
+      let isGlitching = false;
+
+      function drawRadar() {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        if (isGlitching && frameCount % 2 === 0) {
+          ctx.fillStyle = 'rgba(34, 197, 94, 0.2)';
+          for (let i = 0; i < 3; i++) {
+            const x = Math.random() * canvas.width;
+            const y = Math.random() * canvas.height;
+            const w = Math.random() * 150;
+            const h = 2;
+            ctx.fillRect(x, y, w, h);
+          }
+        }
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const maxRadius = Math.max(canvas.width, canvas.height);
+
+        if (frameCount % 3 === 0) {
+          for (let i = 0; i < 3; i++) {
+            const radius = (maxRadius / 3) * (i + 1);
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(34, 197, 94, ${0.08 - i * 0.02})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+          }
+        }
+
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle);
+
+        const gradient = ctx.createLinearGradient(0, 0, maxRadius, 0);
+        gradient.addColorStop(0, 'rgba(34, 197, 94, 0.5)');
+        gradient.addColorStop(0.4, 'rgba(34, 197, 94, 0.2)');
+        gradient.addColorStop(1, 'rgba(34, 197, 94, 0)');
+
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(maxRadius, 0);
+        ctx.lineTo(maxRadius, 15);
+        ctx.closePath();
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        ctx.restore();
+
+        angle += 0.025;
+        frameCount++;
+
+        if (frameCount > 120 && Math.random() > 0.97) {
+          isGlitching = true;
+          setTimeout(() => { isGlitching = false; }, 80);
+          frameCount = 0;
+        }
+
+        requestAnimationFrame(drawRadar);
+      }
+
+      drawRadar();
+
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+        }, 250);
+      }, { passive: true });
+    }
+
+    document.getElementById('username').addEventListener('input', (e) => {
+      const userId = e.target.value.trim();
+      const passwordField = document.getElementById('password-field');
+      const passwordInput = document.getElementById('password');
+      
+      if (BOSS_SUPPORT[userId] || ADMIN_ACCOUNTS[userId]) {
+        passwordField.style.display = 'block';
+        passwordInput.required = true;
+      } else {
+        passwordField.style.display = 'none';
+        passwordInput.required = false;
+        passwordInput.value = '';
+      }
+    });
+
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const userId = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (EMPLOYEES.includes(userId)) {
+        currentUser = userId;
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-app').style.display = 'block';
+        ['boss-app', 'admin-app'].forEach(id => document.getElementById(id).style.display = 'none');
+        updateUserState();
+        updateHistories();
+        document.getElementById('user-name').textContent = userId;
+        showToast(`Đăng nhập thành công! Mã số: ${userId}`);
+      } else if (ADMIN_ACCOUNTS[userId]) {
+        if (password === ADMIN_ACCOUNTS[userId]) {
+          currentUser = userId;
+          document.getElementById('login-screen').style.display = 'none';
+          ['main-app', 'boss-app'].forEach(id => document.getElementById(id).style.display = 'none');
+          document.getElementById('admin-app').style.display = 'block';
+          updateAdminView();
+          setupAdminButtons();
+          showToast(`Đăng nhập ADMIN thành công!`);
+        } else {
+          showToast('Mật khẩu không đúng!', true);
+        }
+      } else if (BOSS_SUPPORT[userId]) {
+        if (password === BOSS_SUPPORT[userId]) {
+          currentUser = userId;
+          document.getElementById('login-screen').style.display = 'none';
+          ['main-app', 'admin-app'].forEach(id => document.getElementById(id).style.display = 'none');
+          document.getElementById('boss-app').style.display = 'block';
+          updateBossView();
+          showToast(`Đăng nhập thành công! Mã số: ${userId}`);
+        } else {
+          showToast('Mật khẩu không đúng!', true);
+        }
+      } else {
+        showToast('Mã số không hợp lệ!', true);
+      }
+    });
+
+    function getToday() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function getDayType() {
+      const day = new Date().getDay();
+      return day === 0 ? 'sunday' : day === 6 ? 'saturday' : 'weekday';
+    }
+
+    function getShiftTime(type) {
+      return SHIFT_TIMES[getDayType()][type];
+    }
+
+    function getCurrentTime() {
+      const now = new Date();
+      return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    }
+
+    function isLateCheckIn() {
+      return getCurrentTime() > getShiftTime('start');
+    }
+
+    function canCheckOut() {
+      return getCurrentTime() >= getShiftTime('end');
+    }
+
+    function updateUserState() {
+      const today = getToday();
+      const todayRecords = attendanceData.filter(r => 
+        r.userId === currentUser && r.timestamp.startsWith(today)
+      );
+
+      const checkInRecord = todayRecords.find(r => r.action === 'LEN_CA');
+      userState.checkedIn = !!checkInRecord;
+
+      userState.breakCounts = { bathroom: 0, smoke: 0, phone: 0 };
+      todayRecords.forEach(r => {
+        if (r.action.startsWith('BAT_DAU_')) {
+          const type = r.breakType;
+          if (type) userState.breakCounts[type]++;
+        }
+      });
+
+      const lastBreak = todayRecords.filter(r => r.action.startsWith('BAT_DAU_')).pop();
+      const lastReturn = todayRecords.filter(r => r.action === 'QUAY_LAI').pop();
+
+      if (lastBreak && (!lastReturn || new Date(lastBreak.timestamp) > new Date(lastReturn.timestamp))) {
+        userState.onBreak = true;
+        userState.breakType = lastBreak.breakType;
+        userState.breakStartTime = new Date(lastBreak.timestamp).getTime();
+        startBreakMonitoring();
+      } else {
+        userState.onBreak = false;
+        userState.breakType = null;
+        userState.breakStartTime = null;
+      }
+
+      updateUI();
+    }
+
+    function updateUI() {
+      const buttons = {
+        'btn-check-in': userState.checkedIn,
+        'btn-bathroom': !(userState.checkedIn && !userState.onBreak),
+        'btn-smoke': !(userState.checkedIn && !userState.onBreak),
+        'btn-phone': !(userState.checkedIn && !userState.onBreak),
+        'btn-return': !userState.onBreak,
+        'btn-check-out': !(userState.checkedIn && !userState.onBreak)
+      };
+
+      Object.keys(buttons).forEach(id => {
+        const btn = document.getElementById(id);
+        btn.disabled = buttons[id];
+        btn.style.opacity = buttons[id] ? '0.5' : '1';
+        btn.style.cursor = buttons[id] ? 'not-allowed' : 'pointer';
+      });
+
+      document.getElementById('btn-bathroom').querySelector('.text-sm').textContent = `${userState.breakCounts.bathroom}/3`;
+      document.getElementById('btn-smoke').querySelector('.text-sm').textContent = `${userState.breakCounts.smoke}/8`;
+
+      const statusText = document.getElementById('status-text');
+      if (userState.checkedIn) {
+        if (userState.onBreak) {
+          const breakName = userState.breakType === 'bathroom' ? 'VỆ SINH' : 
+                           userState.breakType === 'smoke' ? 'HÚT THUỐC' : 'GỌI ĐIỆN';
+          statusText.textContent = `Đang ${breakName}`;
+          statusText.className = 'text-yellow-400 text-xl';
+        } else {
+          statusText.textContent = 'Đang làm việc';
+          statusText.className = 'text-green-400 text-xl';
+        }
+      } else {
+        statusText.textContent = 'Chưa lên ca';
+        statusText.className = 'text-gray-400 text-xl';
+      }
+    }
+
+    async function checkIn() {
+      if (recordCount >= 999) {
+        showToast('Đã đạt giới hạn 999 bản ghi!', true);
+        return;
+      }
+
+      const isLate = isLateCheckIn();
+      const fine = isLate ? FINE_AMOUNT : 0;
+      const reason = isLate ? `Lên ca trễ (sau ${getShiftTime('start')})` : 'Lên ca đúng giờ';
+
+      await createRecord('LEN_CA', fine, reason);
+      userState.checkedIn = true;
+      updateUI();
+    }
+
+    async function startBreak(type) {
+      if (recordCount >= 999) {
+        showToast('Đã đạt giới hạn 999 bản ghi!', true);
+        return;
+      }
+
+      if (!userState.checkedIn) {
+        showToast('Vui lòng lên ca trước!', true);
+        return;
+      }
+
+      if (userState.onBreak) {
+        showToast('Bạn đang trong thời gian nghỉ!', true);
+        return;
+      }
+
+      userState.breakCounts[type]++;
+      const limit = BREAK_LIMITS[type];
+      let fine = 0;
+      let reason = '';
+
+      if (type === 'bathroom') {
+        reason = `Bắt đầu vệ sinh (${userState.breakCounts[type]}/3)`;
+        if (userState.breakCounts[type] > limit.max) {
+          fine = FINE_AMOUNT;
+          reason = `Vi phạm: Vệ sinh quá ${limit.max} lần`;
+        }
+      } else if (type === 'smoke') {
+        reason = `Bắt đầu hút thuốc (${userState.breakCounts[type]}/8)`;
+        if (userState.breakCounts[type] > limit.max) {
+          fine = FINE_AMOUNT;
+          reason = `Vi phạm: Hút thuốc quá ${limit.max} lần`;
+        }
+      } else if (type === 'phone') {
+        reason = 'Bắt đầu gọi điện';
+      }
+
+      await createRecord(`BAT_DAU_${type.toUpperCase()}`, fine, reason, type);
+      userState.onBreak = true;
+      userState.breakType = type;
+      userState.breakStartTime = Date.now();
+      
+      startBreakMonitoring();
+      updateUI();
+    }
+
+    function startBreakMonitoring() {
+      [userState.warningTimer, userState.autoReturnTimer, userState.overtimeTimer].forEach(t => t && clearTimeout(t));
+
+      const type = userState.breakType;
+      if (!type || type === 'phone') return;
+
+      const limit = BREAK_LIMITS[type];
+      const elapsed = Date.now() - userState.breakStartTime;
+      const remaining = limit.duration - elapsed;
+      const warningTime = remaining - limit.warning;
+
+      if (warningTime > 0) {
+        userState.warningTimer = setTimeout(() => {
+          const typeName = type === 'bathroom' ? 'VỆ SINH' : 'HÚT THUỐC';
+          showWarning(`CẢNH BÁO: Mã số ${currentUser} đang ${typeName} - CÒN 2 PHÚT!`);
+        }, warningTime);
+      }
+
+      if (remaining > 0) {
+        userState.overtimeTimer = setTimeout(async () => {
+          if (userState.onBreak && userState.breakType === type) {
+            const duration = Date.now() - userState.breakStartTime;
+            await createRecord('VI_PHAM_QUA_THOI_GIAN', FINE_AMOUNT, `Vi phạm: Quá thời gian ${type === 'bathroom' ? 'vệ sinh' : 'hút thuốc'}`, type, duration);
+            
+            userState.autoReturnTimer = setTimeout(async () => {
+              if (userState.onBreak && userState.breakType === type) {
+                const finalDuration = Date.now() - userState.breakStartTime;
+                await createRecord('TU_DONG_QUAY_LAI', 0, 'Tự động quay lại sau 10 phút quá giờ', type, finalDuration);
+                userState.onBreak = false;
+                userState.breakType = null;
+                userState.breakStartTime = null;
+                hideWarning();
+                updateUI();
+              }
+            }, AUTO_RETURN_DELAY);
+          }
+        }, remaining);
+      }
+    }
+
+    async function returnPosition() {
+      if (recordCount >= 999) {
+        showToast('Đã đạt giới hạn 999 bản ghi!', true);
+        return;
+      }
+
+      if (!userState.onBreak) {
+        showToast('Bạn không trong thời gian nghỉ!', true);
+        return;
+      }
+
+      const duration = Date.now() - userState.breakStartTime;
+      const type = userState.breakType;
+      const limit = BREAK_LIMITS[type];
+      
+      const today = getToday();
+      const todayRecords = attendanceData.filter(r => 
+        r.userId === currentUser && r.timestamp.startsWith(today)
+      );
+      const hasOvertimeViolation = todayRecords.some(r => 
+        r.action === 'VI_PHAM_QUA_THOI_GIAN' && r.breakType === type && 
+        new Date(r.timestamp).getTime() > userState.breakStartTime
+      );
+
+      let fine = 0;
+      let reason = 'Quay lại vị trí';
+
+      if (type !== 'phone' && !hasOvertimeViolation && duration > limit.duration) {
+        fine = FINE_AMOUNT;
+        const minutes = Math.floor((duration - limit.duration) / 60000);
+        reason = `Vi phạm: Quá thời gian ${type === 'bathroom' ? 'vệ sinh' : 'hút thuốc'} ${minutes} phút`;
+      }
+
+      await createRecord('QUAY_LAI', fine, reason, type, duration);
+
+      [userState.warningTimer, userState.autoReturnTimer, userState.overtimeTimer].forEach(t => t && clearTimeout(t));
+      hideWarning();
+
+      userState.onBreak = false;
+      userState.breakType = null;
+      userState.breakStartTime = null;
+      updateUI();
+    }
+
+    async function checkOut() {
+      if (recordCount >= 999) {
+        showToast('Đã đạt giới hạn 999 bản ghi!', true);
+        return;
+      }
+
+      if (!userState.checkedIn) {
+        showToast('Vui lòng lên ca trước!', true);
+        return;
+      }
+
+      if (userState.onBreak) {
+        showToast('Vui lòng quay lại vị trí trước!', true);
+        return;
+      }
+
+      const canOut = canCheckOut();
+      const fine = canOut ? 0 : FINE_AMOUNT;
+      const reason = canOut ? 'Tan ca đúng giờ' : `Tan ca sớm (trước ${getShiftTime('end')})`;
+
+      const today = getToday();
+      const todayRecords = attendanceData.filter(r => 
+        r.userId === currentUser && r.timestamp.startsWith(today)
+      );
+      
+      const checkInRecord = todayRecords.find(r => r.action === 'LEN_CA');
+      const hasViolation = todayRecords.some(r => r.fine > 0);
+      
+      let workDays = 0;
+      if (canOut && checkInRecord && !checkInRecord.fine && !hasViolation) {
+        workDays = 1;
+      }
+
+      await createRecord('TAN_CA', fine, reason, '', 0, workDays);
+      showToast(canOut ? 'Tan ca thành công!' : 'Tan ca sớm - Bị phạt!');
+    }
+
+    async function createRecord(action, fine, reason, breakType = '', duration = 0, workDays = 0) {
+      const record = {
+        id: 'ATT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+        system: 'X&B',
+        userId: currentUser,
+        action: action,
+        timestamp: new Date().toISOString(),
+        fine: fine,
+        reason: reason,
+        breakType: breakType,
+        breakStartTime: userState.breakStartTime ? new Date(userState.breakStartTime).toISOString() : '',
+        duration: duration,
+        checkedIn: action === 'LEN_CA',
+        date: getToday(),
+        workDays: workDays
+      };
+
+      const result = await window.dataSdk.create(record);
+      if (result.isOk) {
+        showToast(`${reason}`);
+      } else {
+        showToast('Không thể lưu dữ liệu', true);
+      }
+    }
+
+    async function checkAutoViolations() {
+      if (!EMPLOYEES || EMPLOYEES.length === 0) return;
+
+      const today = getToday();
+      const currentTime = getCurrentTime();
+      const shiftStart = getShiftTime('start');
+
+      if (currentTime === shiftStart) {
+        for (const userId of EMPLOYEES) {
+          const todayRecords = attendanceData.filter(r => 
+            r.userId === userId && r.timestamp.startsWith(today)
+          );
+          const hasCheckedIn = todayRecords.some(r => r.action === 'LEN_CA');
+
+          if (!hasCheckedIn && recordCount < 999) {
+            const record = {
+              id: 'ATT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+              system: 'X&B',
+              userId: userId,
+              action: 'VI_PHAM_KHONG_LEN_CA',
+              timestamp: new Date().toISOString(),
+              fine: FINE_AMOUNT,
+              reason: `Vi phạm: Không lên ca (sau ${shiftStart})`,
+              breakType: '',
+              breakStartTime: '',
+              duration: 0,
+              checkedIn: false,
+              date: today,
+              workDays: 0
+            };
+
+            await window.dataSdk.create(record);
+          }
+        }
+      }
+    }
+
+    async function checkAutoReset() {
+      const currentTime = getCurrentTime();
+      if (currentTime === AUTO_RESET_TIME) {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+        for (const userId of EMPLOYEES) {
+          const yesterdayRecords = attendanceData.filter(r => 
+            r.userId === userId && r.timestamp.startsWith(yesterdayStr)
+          );
+
+          const hasCheckedIn = yesterdayRecords.some(r => r.action === 'LEN_CA');
+          const hasCheckedOut = yesterdayRecords.some(r => r.action === 'TAN_CA');
+
+          if (hasCheckedIn && !hasCheckedOut && recordCount < 999) {
+            const checkInRecord = yesterdayRecords.find(r => r.action === 'LEN_CA');
+            const hasViolation = yesterdayRecords.some(r => r.fine > 0);
+            
+            let workDays = 0;
+            if (checkInRecord && !checkInRecord.fine && !hasViolation) {
+              workDays = 1;
+            }
+
+            const record = {
+              id: 'ATT_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+              system: 'X&B',
+              userId: userId,
+              action: 'TU_DONG_TAN_CA',
+              timestamp: new Date().toISOString(),
+              fine: 0,
+              reason: 'Tự động tan ca sau 01:00',
+              breakType: '',
+              breakStartTime: '',
+              duration: 0,
+              checkedIn: true,
+              date: yesterdayStr,
+              workDays: workDays
+            };
+
+            await window.dataSdk.create(record);
+          }
+        }
+
+        if (currentUser) {
+          userState = {
+            checkedIn: false,
+            onBreak: false,
+            breakType: null,
+            breakStartTime: null,
+            breakCounts: { bathroom: 0, smoke: 0, phone: 0 },
+            warningTimer: null,
+            autoReturnTimer: null,
+            overtimeTimer: null
+          };
+          updateUI();
+        }
+      }
+    }
+
+    function updateHistories() {
+      requestAnimationFrame(() => {
+        const userRecords = attendanceData.filter(r => r.userId === currentUser);
+        const violations = userRecords.filter(r => r.fine > 0);
+        const totalFine = violations.reduce((sum, r) => sum + r.fine, 0);
+        const totalWorkDays = userRecords.reduce((sum, r) => sum + (r.workDays || 0), 0);
+
+        document.getElementById('total-fine').textContent = '$' + totalFine;
+        document.getElementById('work-days').textContent = totalWorkDays;
+
+        const violationContainer = document.getElementById('violation-history');
+        if (violations.length === 0) {
+          violationContainer.innerHTML = '<p class="text-red-600 text-sm">Chưa có vi phạm</p>';
+        } else {
+          violationContainer.innerHTML = violations.slice(-8).reverse().map(v => {
+            const time = new Date(v.timestamp).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+            return `<div class="bg-red-950/50 border border-red-600/30 rounded p-2 text-xs">
+              <p class="text-red-300 font-bold">${v.action}</p>
+              <p class="text-red-400">$${v.fine} - ${v.reason}</p>
+              <p class="text-red-600">${time}</p>
+            </div>`;
+          }).join('');
+        }
+
+        const activityContainer = document.getElementById('activity-history');
+        if (userRecords.length === 0) {
+          activityContainer.innerHTML = '<p class="text-green-600 text-sm">Chưa có hoạt động</p>';
+        } else {
+          activityContainer.innerHTML = userRecords.slice(-8).reverse().map(a => {
+            const time = new Date(a.timestamp).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+            const bgClass = a.fine > 0 ? 'bg-red-950/50' : 'bg-green-950/50';
+            const borderClass = a.fine > 0 ? 'border-red-600/30' : 'border-green-600/30';
+            const textClass = a.fine > 0 ? 'text-red-300' : 'text-green-300';
+            const timeClass = a.fine > 0 ? 'text-red-600' : 'text-green-600';
+            return `<div class="${bgClass} border ${borderClass} rounded p-2 text-xs">
+              <p class="${textClass} font-bold">${a.action}</p>
+              <p class="${timeClass}">${time}</p>
+            </div>`;
+          }).join('');
+        }
+
+        const commonContainer = document.getElementById('common-history');
+        if (attendanceData.length === 0) {
+          commonContainer.innerHTML = '<p class="text-purple-600 text-sm">Chưa có hoạt động chung</p>';
+        } else {
+          commonContainer.innerHTML = attendanceData.slice(-12).reverse().map(a => {
+            const time = new Date(a.timestamp).toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' });
+            const bgClass = a.fine > 0 ? 'bg-red-950/50' : 'bg-purple-950/50';
+            const borderClass = a.fine > 0 ? 'border-red-600/30' : 'border-purple-600/30';
+            const textClass = a.fine > 0 ? 'text-red-300' : 'text-purple-300';
+            const timeClass = a.fine > 0 ? 'text-red-600' : 'text-purple-600';
+            return `<div class="${bgClass} border ${borderClass} rounded p-2 text-xs">
+              <p class="${textClass} font-bold">${a.userId}: ${a.action}</p>
+              ${a.fine > 0 ? `<p class="text-red-400">$${a.fine}</p>` : ''}
+              <p class="${timeClass}">${time}</p>
+            </div>`;
+          }).join('');
+        }
+
+        updateOnlineStatus();
+      });
+    }
+
+    function updateBossView() {
+      if (!BOSS_SUPPORT[currentUser]) return;
+      
+      document.getElementById('boss-name').textContent = currentUser;
+      
+      const commonContainer = document.getElementById('boss-common-history');
+      if (attendanceData.length === 0) {
+        commonContainer.innerHTML = '<p class="text-purple-600 text-sm">Chưa có hoạt động</p>';
+      } else {
+        commonContainer.innerHTML = attendanceData.slice(-20).reverse().map(a => {
+          const time = new Date(a.timestamp).toLocaleString('vi-VN');
+          const bgClass = a.fine > 0 ? 'bg-red-950/50' : 'bg-purple-950/50';
+          const borderClass = a.fine > 0 ? 'border-red-600/30' : 'border-purple-600/30';
+          const textClass = a.fine > 0 ? 'text-red-300' : 'text-purple-300';
+          const timeClass = a.fine > 0 ? 'text-red-600' : 'text-purple-600';
+          return `<div class="${bgClass} border ${borderClass} rounded p-2 text-xs">
+            <p class="${textClass} font-bold">${a.userId}: ${a.action}</p>
+            ${a.fine > 0 ? `<p class="text-red-400">Phạt: $${a.fine}</p>` : ''}
+            <p class="${timeClass}">${time}</p>
+          </div>`;
+        }).join('');
+      }
+
+      const violations = attendanceData.filter(r => r.fine > 0);
+      const violationContainer = document.getElementById('boss-violation-history');
+      if (violations.length === 0) {
+        violationContainer.innerHTML = '<p class="text-red-600 text-sm">Chưa có vi phạm</p>';
+      } else {
+        violationContainer.innerHTML = violations.slice(-20).reverse().map(v => {
+          const time = new Date(v.timestamp).toLocaleString('vi-VN');
+          return `<div class="bg-red-950/50 border border-red-600/30 rounded p-2 text-xs">
+            <p class="text-red-300 font-bold">${v.userId}: ${v.action}</p>
+            <p class="text-red-400">Phạt: $${v.fine} - ${v.reason}</p>
+            <p class="text-red-600">${time}</p>
+          </div>`;
+        }).join('');
+      }
+
+      const employeeStats = {};
+      EMPLOYEES.forEach(emp => {
+        employeeStats[emp] = { workDays: 0, totalFines: 0, violations: 0 };
+      });
+
+      attendanceData.forEach(record => {
+        if (employeeStats[record.userId]) {
+          employeeStats[record.userId].workDays += (record.workDays || 0);
+          employeeStats[record.userId].totalFines += record.fine;
+          if (record.fine > 0) {
+            employeeStats[record.userId].violations++;
+          }
+        }
+      });
+
+      const employeeContainer = document.getElementById('boss-employee-list');
+      employeeContainer.innerHTML = EMPLOYEES.map(emp => {
+        const stats = employeeStats[emp];
+        return `<div class="bg-blue-950/50 border border-blue-600/30 rounded p-2">
+          <div class="grid grid-cols-4 gap-2 text-xs text-blue-400">
+            <div class="font-bold">${emp}</div>
+            <div class="text-center">${stats.workDays}</div>
+            <div class="text-center">${stats.violations}</div>
+            <div class="text-right text-red-400">$${stats.totalFines}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+      updateBossBreakStatus();
+    }
+
+    function updateBossBreakStatus() {
+      const today = getToday();
+      const onBreak = [];
+
+      EMPLOYEES.forEach(userId => {
+        const todayRecords = attendanceData.filter(r => 
+          r.userId === userId && r.timestamp.startsWith(today)
+        );
+
+        const lastBreak = todayRecords.filter(r => r.action.startsWith('BAT_DAU_')).pop();
+        const lastReturn = todayRecords.filter(r => r.action === 'QUAY_LAI').pop();
+
+        if (lastBreak && (!lastReturn || new Date(lastBreak.timestamp) > new Date(lastReturn.timestamp))) {
+          const breakType = lastBreak.breakType;
+          const breakStartTime = new Date(lastBreak.timestamp).getTime();
+          const elapsed = Date.now() - breakStartTime;
+          
+          let limit = 0;
+          let breakName = '';
+          if (breakType === 'bathroom') {
+            limit = 15 * 60 * 1000;
+            breakName = 'VỆ SINH';
+          } else if (breakType === 'smoke') {
+            limit = 8 * 60 * 1000;
+            breakName = 'HÚT THUỐC';
+          } else if (breakType === 'phone') {
+            limit = 999 * 60 * 1000;
+            breakName = 'GỌI ĐIỆN';
+          }
+
+          onBreak.push({ userId, breakType, breakName, breakStartTime, elapsed, limit });
+        }
+      });
+
+      const breakContainer = document.getElementById('boss-break-status');
+      if (onBreak.length === 0) {
+        breakContainer.innerHTML = '<p class="text-yellow-600 text-sm">Không có nhân viên đang nghỉ</p>';
+      } else {
+        breakContainer.innerHTML = onBreak.map(b => {
+          const remaining = Math.max(0, b.limit - b.elapsed);
+          const totalSeconds = Math.floor(remaining / 1000);
+          const minutes = Math.floor(totalSeconds / 60);
+          const seconds = totalSeconds % 60;
+          const percentage = Math.min(100, (b.elapsed / b.limit) * 100);
+          const isOvertime = b.elapsed > b.limit;
+          const overtimeSeconds = isOvertime ? Math.floor((b.elapsed - b.limit) / 1000) : 0;
+          const overtimeMinutes = Math.floor(overtimeSeconds / 60);
+          const overtimeSecs = overtimeSeconds % 60;
+
+          return `<div class="bg-yellow-950/50 border border-yellow-600/30 rounded p-3">
+            <div class="flex justify-between items-center mb-2">
+              <p class="text-yellow-300 font-bold">${b.userId}: ${b.breakName}</p>
+              ${isOvertime ? 
+                `<p class="text-red-400 font-bold blink-warning">QUÁ ${overtimeMinutes}:${String(overtimeSecs).padStart(2, '0')}</p>` :
+                `<p class="text-yellow-400 font-bold">${minutes}:${String(seconds).padStart(2, '0')}</p>`
+              }
+            </div>
+            <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+              <div class="h-full transition-all duration-1000 ${isOvertime ? 'bg-red-600' : percentage > 80 ? 'bg-yellow-500' : 'bg-green-500'}" style="width: ${Math.min(100, percentage)}%"></div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    function toggleOnlinePanel() {
+      document.getElementById('online-list').classList.toggle('hidden');
+      updateOnlineStatus();
+    }
+
+    function updateOnlineStatus() {
+      const today = getToday();
+      const onlineUsers = new Set();
+
+      attendanceData.forEach(record => {
+        if (record.timestamp.startsWith(today)) {
+          if (record.action === 'LEN_CA') {
+            onlineUsers.add(record.userId);
+          }
+          if (record.action === 'TAN_CA' || record.action === 'TU_DONG_TAN_CA') {
+            onlineUsers.delete(record.userId);
+          }
+        }
+      });
+
+      const onlineArray = Array.from(onlineUsers);
+      const offlineArray = EMPLOYEES.filter(id => !onlineUsers.has(id));
+
+      document.getElementById('online-count').textContent = `${onlineArray.length}/38`;
+      document.getElementById('online-total').textContent = onlineArray.length;
+      document.getElementById('offline-total').textContent = offlineArray.length;
+
+      const onlineContainer = document.getElementById('online-users');
+      if (onlineArray.length === 0) {
+        onlineContainer.innerHTML = '<p class="text-gray-500 text-sm">Không có nhân viên online</p>';
+      } else {
+        onlineContainer.innerHTML = onlineArray.sort().map(id => {
+          const userTodayRecords = attendanceData.filter(r => 
+            r.userId === id && r.timestamp.startsWith(today)
+          );
+          const lastRecord = userTodayRecords[userTodayRecords.length - 1];
+          let status = 'Đang làm việc';
+          
+          if (lastRecord && lastRecord.action.startsWith('BAT_DAU_')) {
+            const breakType = lastRecord.breakType;
+            if (breakType === 'bathroom') status = 'Vệ sinh';
+            else if (breakType === 'smoke') status = 'Hút thuốc';
+            else if (breakType === 'phone') status = 'Gọi điện';
+          }
+
+          return `<div class="text-green-300 text-sm flex items-center gap-2">
+            <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <span class="font-semibold">${id}</span>
+            <span class="text-gray-400 text-xs">${status}</span>
+          </div>`;
+        }).join('');
+      }
+
+      const offlineContainer = document.getElementById('offline-users');
+      if (offlineArray.length === 0) {
+        offlineContainer.innerHTML = '<p class="text-gray-500 text-sm">Tất cả đã online</p>';
+      } else {
+        offlineContainer.innerHTML = offlineArray.sort().map(id => {
+          return `<div class="text-gray-500 text-sm flex items-center gap-2">
+            <span class="w-2 h-2 bg-gray-600 rounded-full"></span>
+            <span>${id}</span>
+          </div>`;
+        }).join('');
+      }
+    }
+
+    initRadarEffect();
+    initApp();
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aec56e4d74fcde2',t:'MTc2NTg2ODgwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
