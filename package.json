@@ -1,0 +1,17 @@
+{
+  "name": "feiyue-system",
+  "version": "1.0.0",
+  "description": "FeiYue Employee Time Tracking System",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1",
+    "pg": "^8.16.3"
+  }
+}
