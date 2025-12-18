@@ -143,9 +143,19 @@ app.get('/api/revenue', async (req, res) => {
   }
 });
 
+const ADMIN_ACCOUNTS_SERVER = { 'ADMIN': '123456', '3040': 'AD1234' };
+
+function validateAdmin(adminCode, adminPassword) {
+  return ADMIN_ACCOUNTS_SERVER[adminCode] && ADMIN_ACCOUNTS_SERVER[adminCode] === adminPassword;
+}
+
 app.post('/api/revenue', async (req, res) => {
   try {
-    const { employee_code, date, time, amount, transaction_type, order_type } = req.body;
+    const { employee_code, date, time, amount, transaction_type, order_type, adminCode, adminPassword } = req.body;
+    
+    if (!validateAdmin(adminCode, adminPassword)) {
+      return res.json({ isOk: false, error: 'Unauthorized: Admin access required' });
+    }
     
     await pool.query(
       `INSERT INTO revenue_records (employee_code, date, time, amount, transaction_type, order_type)
@@ -162,6 +172,11 @@ app.post('/api/revenue', async (req, res) => {
 
 app.delete('/api/revenue/:id', async (req, res) => {
   try {
+    const { adminCode, adminPassword } = req.body || {};
+    if (!validateAdmin(adminCode, adminPassword)) {
+      return res.json({ isOk: false, error: 'Unauthorized: Admin access required' });
+    }
+    
     await pool.query('DELETE FROM revenue_records WHERE id = $1', [req.params.id]);
     res.json({ isOk: true });
   } catch (error) {
@@ -172,6 +187,11 @@ app.delete('/api/revenue/:id', async (req, res) => {
 
 app.delete('/api/revenue', async (req, res) => {
   try {
+    const { adminCode, adminPassword } = req.body || {};
+    if (!validateAdmin(adminCode, adminPassword)) {
+      return res.json({ isOk: false, error: 'Unauthorized: Admin access required' });
+    }
+    
     await pool.query('DELETE FROM revenue_records');
     res.json({ isOk: true });
   } catch (error) {

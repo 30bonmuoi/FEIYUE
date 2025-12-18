@@ -33,12 +33,26 @@ window.dataSdk = {
     });
   },
   
+  _adminCredentials: null,
+  
+  setAdminCredentials(adminCode, adminPassword) {
+    this._adminCredentials = { adminCode, adminPassword };
+  },
+  
+  clearAdminCredentials() {
+    this._adminCredentials = null;
+  },
+  
   async create(record) {
     try {
+      const payload = this._type === 'revenue' && this._adminCredentials 
+        ? { ...record, ...this._adminCredentials }
+        : record;
+      
       const response = await fetch(`/api/${this._type}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(record)
+        body: JSON.stringify(payload)
       });
       const result = await response.json();
       if (result.isOk) {
@@ -54,8 +68,14 @@ window.dataSdk = {
   async delete(record) {
     try {
       const id = record.id || record;
+      const payload = this._type === 'revenue' && this._adminCredentials 
+        ? this._adminCredentials 
+        : {};
+      
       const response = await fetch(`/api/${this._type}/${id}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
       const result = await response.json();
       if (result.isOk) {
@@ -70,8 +90,14 @@ window.dataSdk = {
   
   async deleteAll() {
     try {
+      const payload = this._type === 'revenue' && this._adminCredentials 
+        ? this._adminCredentials 
+        : {};
+      
       const response = await fetch(`/api/${this._type}`, {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
       const result = await response.json();
       if (result.isOk) {
