@@ -1,118 +1,78 @@
-[{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 4,
-	"message": "Unknown tool 'github/github-mcp-server/get_issue'.",
-	"startLineNumber": 5,
-	"startColumn": 19,
-	"endLineNumber": 5,
-	"endColumn": 55
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 4,
-	"message": "Unknown tool 'github/github-mcp-server/get_issue_comments'.",
-	"startLineNumber": 5,
-	"startColumn": 57,
-	"endLineNumber": 5,
-	"endColumn": 102
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 4,
-	"message": "File 'path' not found at '~/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/path'.",
-	"startLineNumber": 66,
-	"startColumn": 55,
-	"endLineNumber": 66,
-	"endColumn": 59
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'runSubagent' has been renamed, use 'agent' instead.",
-	"startLineNumber": 5,
-	"startColumn": 104,
-	"endLineNumber": 5,
-	"endColumn": 117
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'usages' has been renamed, use 'search/usages' instead.",
-	"startLineNumber": 5,
-	"startColumn": 119,
-	"endLineNumber": 5,
-	"endColumn": 127
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'problems' has been renamed, use 'read/problems' instead.",
-	"startLineNumber": 5,
-	"startColumn": 129,
-	"endLineNumber": 5,
-	"endColumn": 139
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'changes' has been renamed, use 'search/changes' instead.",
-	"startLineNumber": 5,
-	"startColumn": 141,
-	"endLineNumber": 5,
-	"endColumn": 150
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'testFailure' has been renamed, use 'execute/testFailure' instead.",
-	"startLineNumber": 5,
-	"startColumn": 152,
-	"endLineNumber": 5,
-	"endColumn": 165
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'fetch' has been renamed, use 'web/fetch' instead.",
-	"startLineNumber": 5,
-	"startColumn": 167,
-	"endLineNumber": 5,
-	"endColumn": 174
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'githubRepo' has been renamed, use 'web/githubRepo' instead.",
-	"startLineNumber": 5,
-	"startColumn": 176,
-	"endLineNumber": 5,
-	"endColumn": 188
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'runSubagent' has been renamed, use 'agent' instead.",
-	"startLineNumber": 33,
-	"startColumn": 22,
-	"endLineNumber": 33,
-	"endColumn": 33
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'runSubagent' has been renamed, use 'agent' instead.",
-	"startLineNumber": 35,
-	"startColumn": 44,
-	"endLineNumber": 35,
-	"endColumn": 55
-},{
-	"resource": "/home/codespace/.vscode-remote/extensions/github.copilot-chat-0.35.0/assets/agents/Plan.agent.md",
-	"owner": "prompts-diagnostics-provider",
-	"severity": 2,
-	"message": "Tool or toolset 'runSubagent' has been renamed, use 'agent' instead.",
-	"startLineNumber": 37,
-	"startColumn": 10,
-	"endLineNumber": 37,
-	"endColumn": 21
-}]
+# FeiYue System - Employee Time Tracking
+
+## Overview
+FeiYue System is a Vietnamese employee time tracking and attendance management system. It tracks employee check-ins, breaks (bathroom, smoking, phone calls), and shift changes with automatic violation detection and fine calculation.
+
+## Features
+- Employee login and authentication
+- Check-in/check-out tracking with time validation
+- Break management (bathroom: 3x/day at 15min, smoking: 8x/day at 8min, phone: unlimited)
+- Automatic violation detection and fine calculation ($10 per violation)
+- Admin panel for managing all employee data
+- Boss/Manager view for monitoring
+- Revenue tracking system (separate page at /revenue)
+- Automatic daily reset at 01:00
+
+## Project Structure
+- `server.js` - Express backend server with PostgreSQL integration
+- `index.html` - Main attendance tracking application
+- `revenue.html` - Revenue tracking dashboard
+- `_sdk/data_sdk.js` - Data layer SDK for frontend-backend communication
+- `_sdk/element_sdk.js` - UI configuration SDK
+
+## Database
+Uses PostgreSQL with two tables:
+- `attendance_records` - All attendance/break/violation records
+- `revenue_records` - Transaction revenue data
+
+## Setup and Running
+
+### Prerequisites
+- Node.js (v14 or higher)
+- PostgreSQL (v12 or higher)
+
+### Quick Start
+
+1. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+
+2. **Setup PostgreSQL database:**
+   ```bash
+   # Start PostgreSQL service
+   sudo service postgresql start
+   
+   # Create database and user
+   sudo -u postgres psql -c "CREATE DATABASE feiyue;"
+   sudo -u postgres psql -c "CREATE USER feiyue_user WITH PASSWORD 'feiyue123';"
+   sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE feiyue TO feiyue_user;"
+   sudo -u postgres psql feiyue -c "GRANT ALL ON SCHEMA public TO feiyue_user;"
+   ```
+
+3. **Configure environment:**
+   ```bash
+   # Copy example environment file
+   cp .env.example .env
+   
+   # Edit .env if needed to change database credentials
+   ```
+
+4. **Start the application:**
+   ```bash
+   # Option 1: Use the startup script
+   ./start.sh
+   
+   # Option 2: Run directly
+   DATABASE_URL=postgresql://feiyue_user:feiyue123@localhost:5432/feiyue node server.js
+   
+   # Option 3: With npm
+   npm start
+   ```
+
+The application will be available at http://localhost:5000
+
+## Default Accounts
+Employee codes: 2001-2009, 1001-1012, 3001, 3003, etc.
+Admin: 3040 (password required)
+Boss accounts: 3006, 3007 (password required)
