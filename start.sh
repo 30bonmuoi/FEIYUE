@@ -3,9 +3,9 @@
 # FeiYue System Startup Script
 
 # Check if PostgreSQL is running
-if ! pgrep -x "postgres" > /dev/null; then
+if ! systemctl is-active --quiet postgresql 2>/dev/null && ! pgrep -x "postgres" > /dev/null; then
     echo "Starting PostgreSQL..."
-    sudo service postgresql start
+    sudo service postgresql start || echo "Warning: Could not start PostgreSQL automatically"
     sleep 2
 fi
 
@@ -21,8 +21,10 @@ if [ ! -d "node_modules" ]; then
     npm install
 fi
 
-# Load environment variables
-export $(cat .env | xargs)
+# Load environment variables safely
+set -a
+source .env
+set +a
 
 # Start the server
 echo "Starting FeiYue System..."
